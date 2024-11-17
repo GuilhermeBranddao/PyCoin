@@ -18,7 +18,7 @@ class Blockchain:
         self.nodes_file_path = Path(os.path.join("app", "data", "nodes", nodes_file_path))
         self.nodes = self.load_nodes(list_node_valid) 
         self.my_node = my_node
-        self.chain = self.load_blockchain()
+        self.blockchain = self.load_blockchain()
         self.replace_chain()
         self.transactions = []
     
@@ -33,13 +33,13 @@ class Blockchain:
                 return json.load(file)
         else:
             self.block_file_path.parent.mkdir(parents=True, exist_ok=True)
-            self.chain = [self.create_genesis_block()]
+            self.blockchain = [self.create_genesis_block()]
             self.save_blockchain()
-            return self.chain
+            return self.blockchain
         
     def save_blockchain(self):
         with open(self.block_file_path, 'w') as file:
-            json.dump(self.chain, file, indent=4)
+            json.dump(self.blockchain, file, indent=4)
 
     def load_nodes(self, list_node_valid:list=[]):
         # FIXME: Não faz sentido o load_nodes receber uma lista de nodes pra salvar... :-(
@@ -76,18 +76,18 @@ class Blockchain:
     
     def create_block(self, proof, previous_hash):
 
-        block = {'index': len(self.chain) + 1,
+        block = {'index': len(self.blockchain) + 1,
                  'timestamp': str(datetime.datetime.now()),
                  'proof': proof,
                  'previous_hash': previous_hash,
                  'transactions': self.transactions}
         self.transactions = []
 
-        self.chain.append(block)
+        self.blockchain.append(block)
         self.save_blockchain()
 
         # Se comunica com os demais nós dá rede
-        self.propagate_new_block(chain_actual=self.chain, nodes_updated=self.nodes)
+        self.propagate_new_blockchain(blockchain_actual=self.blockchain, nodes_updated=self.nodes)
 
         return block
 
@@ -95,7 +95,7 @@ class Blockchain:
         """
         Obtem o último bloco
         """
-        return self.chain[-1]
+        return self.blockchain[-1]
 
     def proof_of_work(self, previous_proof):
         new_proof = 1
@@ -150,14 +150,14 @@ class Blockchain:
         previous_block = self.get_previous_block()
         return previous_block['index'] + 1
     
-    def propagate_new_block(self, chain_actual, nodes_updated):
+    def propagate_new_blockchain(self, blockchain_actual, nodes_updated):
         for node in self.nodes["nodes"]:
             if self.my_node != node:
                 try:
                     url = f'http://{node}/new_block'
                     print(f"Propagação de blocos: {self.my_node} ---> {node}")
 
-                    response = requests.post(url, json={"chain": chain_actual,
+                    response = requests.post(url, json={"chain": blockchain_actual,
                                                         "nodes_updated":[nodes_updated]})
                     if response.status_code == 200:
                         print(f'Sucesso ao notificar {node}')
@@ -166,30 +166,30 @@ class Blockchain:
                 except Exception as e:
                     print(f'Erro ao conectar com {node}: {str(e)}')
     
-    def check_progagate_block(self, new_block, nodes_updated):
+    def check_progagate_blockchain(self, new_blockchain, nodes_updated):
         """
         Verifica se o bloco propagado é o mais maior
         """
-        longest_chain = None
-        max_length = len(self.chain)
+        longest_blockchain = None
+        max_length = len(self.blockchain)
 
-        length = new_block.get('length')
-        chain = new_block.get('chain')
+        length = len(new_blockchain)
+        blockchain = new_blockchain
 
         # Verifica se a cadeia recebida é válida e maior
-        if length > max_length and self.is_chain_valid(chain):
+        if length > max_length and self.is_chain_valid(blockchain):
             max_length = length
-            longest_chain = chain
+            longest_blockchain = blockchain
 
         # Substitui a cadeia se uma mais longa for encontrada
-        if longest_chain:
-            self.chain = longest_chain
+        if longest_blockchain:
+            self.blockchain = longest_blockchain
             self.save_blockchain()
 
             nodes_updated.append(self.my_node)
 
             # Continua a propagação
-            self.propagate_new_block(chain_actual=self.chain, nodes_updated=nodes_updated)
+            self.propagate_new_blockchain(blockchain_actual=self.blockchain, nodes_updated=nodes_updated)
             print("A cadeia foi substituída pela mais longa disponível.")
             return True
         else:
@@ -221,7 +221,7 @@ class Blockchain:
             return False
 
         longest_chain = None
-        max_length = len(self.chain)
+        max_length = len(self.blockchain)
 
         for node in self.nodes['nodes']:
             try:
@@ -243,7 +243,7 @@ class Blockchain:
 
         # Substitui a cadeia se uma mais longa for encontrada
         if longest_chain:
-            self.chain = longest_chain
+            self.blockchain = longest_chain
             self.save_blockchain()
             print("A cadeia foi substituída pela mais longa disponível.")
             return True
