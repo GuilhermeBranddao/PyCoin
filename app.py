@@ -57,13 +57,13 @@ def mine_block():
 
 @app.route('/get_chain', methods = ['GET'])
 def get_chain():
-    response = {'chain': blockchain.chain,
-                'length': len(blockchain.chain)}
+    response = {'chain': blockchain.blockchain,
+                'length': len(blockchain.blockchain)}
     return jsonify(response), 200
 
 @app.route('/is_valid', methods = ['GET'])
 def is_valid():
-    is_valid = blockchain.is_chain_valid(blockchain.chain)
+    is_valid = blockchain.is_chain_valid(blockchain.blockchain)
     if is_valid:
         response = {'message': 'Blockchain Válido'}
     else:
@@ -104,23 +104,23 @@ def replace_chain():
     is_chain_replaced = blockchain.replace_chain()
     if is_chain_replaced:
         response = {'message': 'Nós atualizados com sucesso',
-                    'new_chain' : blockchain.chain}
+                    'new_chain' : blockchain.blockchain}
     else:
         response = {'message': 'Não é necessário atualizar os nós da rede.', 
-                   'actual_chain' : blockchain.chain}
+                   'actual_chain' : blockchain.blockchain}
     return jsonify(response), 201 
 
 @app.route('/get_actual_chain',methods= ['GET'])
 def get_actual_chain():
     response = {'message': 'Nós presente na rede atualmente', 
-                    'actual_chain' : blockchain.chain}
+                    'actual_chain' : blockchain.blockchain}
     return jsonify(response), 201 
 
 @app.route('/get_balance_and_transactions', methods = ['POST'])
 def get_balance_and_transactions():
     json = request.get_json()
 
-    actual_chain = blockchain.chain
+    actual_chain = blockchain.blockchain
 
     # Itera sobre os blocos da cadeia
     balance = 0
@@ -153,7 +153,7 @@ def get_my_nodes():
 def new_blockchain():
     json = request.get_json()
 
-    new_blockchain, nodes_updated = blockchain.check_progagate_blockchain(new_block=json["blockchain"],
+    new_blockchain, nodes_updated = blockchain.check_progagate_blockchain(new_blockchain=json["chain"],
                                      nodes_updated=json["nodes_updated"])
     response = {"new_blockchain":new_blockchain,
         "nodes_updated":nodes_updated}

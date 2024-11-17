@@ -38,6 +38,7 @@ class Blockchain:
             return self.blockchain
         
     def save_blockchain(self):
+        print("Salvando blockchain")
         with open(self.block_file_path, 'w') as file:
             json.dump(self.blockchain, file, indent=4)
 
@@ -83,11 +84,13 @@ class Blockchain:
                  'transactions': self.transactions}
         self.transactions = []
 
+        print(f"O node {self.my_node} conseguiu minerar um bloco!!!")
         self.blockchain.append(block)
         self.save_blockchain()
 
         # Se comunica com os demais nós dá rede
-        self.propagate_new_blockchain(blockchain_actual=self.blockchain, nodes_updated=self.nodes)
+        self.propagate_new_blockchain(blockchain_actual=self.blockchain, 
+                                      nodes_updated=self.my_node)
 
         return block
 
@@ -142,23 +145,25 @@ class Blockchain:
         
         # Usuário A assina a transação
         transaction.sign_transaction()
-
         encoded_data = transaction._decode_transaction_data(transaction._get_transaction_data())
-
         self.transactions.append(encoded_data)
-
         previous_block = self.get_previous_block()
         return previous_block['index'] + 1
     
-    def propagate_new_blockchain(self, blockchain_actual, nodes_updated):
+    def propagate_new_blockchain(self, blockchain_actual, nodes_updated:list):
         for node in self.nodes["nodes"]:
-            if self.my_node != node:
+            print(f"Verificando propagação: {self.my_node} ---> {node}")
+
+            if self.my_node not in nodes_updated:
+                nodes_updated.append(self.my_node)
+            
+            if node not in nodes_updated:
                 try:
-                    url = f'http://{node}/new_block'
+                    url = f'http://{node}/new_blockchain'
                     print(f"Propagação de blocos: {self.my_node} ---> {node}")
 
                     response = requests.post(url, json={"chain": blockchain_actual,
-                                                        "nodes_updated":[nodes_updated]})
+                                                        "nodes_updated":nodes_updated})
                     if response.status_code == 200:
                         print(f'Sucesso ao notificar {node}')
                     else:
@@ -166,7 +171,7 @@ class Blockchain:
                 except Exception as e:
                     print(f'Erro ao conectar com {node}: {str(e)}')
     
-    def check_progagate_blockchain(self, new_blockchain, nodes_updated):
+    def check_progagate_blockchain(self, new_blockchain, nodes_updated:list):
         """
         Verifica se o bloco propagado é o mais maior
         """
@@ -186,10 +191,12 @@ class Blockchain:
             self.blockchain = longest_blockchain
             self.save_blockchain()
 
-            nodes_updated.append(self.my_node)
+            if self.my_node not in nodes_updated:
+                nodes_updated.append(self.my_node)
 
             # Continua a propagação
-            self.propagate_new_blockchain(blockchain_actual=self.blockchain, nodes_updated=nodes_updated)
+            self.propagate_new_blockchain(blockchain_actual=self.blockchain, 
+                                          nodes_updated=nodes_updated)
             print("A cadeia foi substituída pela mais longa disponível.")
             return True
         else:
