@@ -9,13 +9,15 @@ import os
 
 class Blockchain:
     def __init__(self, 
-                 list_node_valid:list="127.0.0.1:5000",
+                 my_node,
+                 list_node_valid:list=["127.0.0.1:5000"],
                  block_file_path='block.json', 
                  nodes_file_path="nodes.json"):
         
         self.block_file_path = Path(os.path.join("app", "data", "blockchain", block_file_path))
         self.nodes_file_path = Path(os.path.join("app", "data", "nodes", nodes_file_path))
         self.nodes = self.load_nodes(list_node_valid) 
+        self.my_node = my_node
         self.chain = self.load_blockchain()
         self.replace_chain()
         self.transactions = []
@@ -83,6 +85,10 @@ class Blockchain:
 
         self.chain.append(block)
         self.save_blockchain()
+
+        # Se comunica com os demais nós dá rede
+        self.propagate_new_block(chain_actual=self.chain, nodes_updated=self.nodes)
+
         return block
 
     def get_previous_block(self):
@@ -144,6 +150,53 @@ class Blockchain:
         previous_block = self.get_previous_block()
         return previous_block['index'] + 1
     
+    def propagate_new_block(self, chain_actual, nodes_updated):
+        for node in self.nodes["nodes"]:
+            if self.my_node != node:
+                try:
+                    url = f'http://{node}/new_block'
+                    print(f"Propagação de blocos: {self.my_node} ---> {node}")
+
+                    response = requests.post(url, json={"chain": chain_actual,
+                                                        "nodes_updated":[nodes_updated]})
+                    if response.status_code == 200:
+                        print(f'Sucesso ao notificar {node}')
+                    else:
+                        print(f'Erro ao notificar {node}: {response.status_code}')
+                except Exception as e:
+                    print(f'Erro ao conectar com {node}: {str(e)}')
+    
+    def check_progagate_block(self, new_block, nodes_updated):
+        """
+        Verifica se o bloco propagado é o mais maior
+        """
+        longest_chain = None
+        max_length = len(self.chain)
+
+        length = new_block.get('length')
+        chain = new_block.get('chain')
+
+        # Verifica se a cadeia recebida é válida e maior
+        if length > max_length and self.is_chain_valid(chain):
+            max_length = length
+            longest_chain = chain
+
+        # Substitui a cadeia se uma mais longa for encontrada
+        if longest_chain:
+            self.chain = longest_chain
+            self.save_blockchain()
+
+            nodes_updated.append(self.my_node)
+
+            # Continua a propagação
+            self.propagate_new_block(chain_actual=self.chain, nodes_updated=nodes_updated)
+            print("A cadeia foi substituída pela mais longa disponível.")
+            return True
+        else:
+            print("A cadeia local já é a mais longa ou nenhuma cadeia válida foi encontrada.")
+            return False
+
+
     def add_node(self, address):
         parsed_url = urlparse(address)
         new_node = parsed_url.netloc

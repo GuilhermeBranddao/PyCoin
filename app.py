@@ -10,6 +10,7 @@ node_address = str(uuid4()).replace('-', '')
 blockchain = Blockchain(nodes_file_path="nodes.json",
                         list_node_valid=["127.0.0.1:5001"],
                         block_file_path='block.json',
+                        my_node = "127.0.0.1:5000"
                         )
 
 @app.route("/wallet", methods = ['GET'])
@@ -147,6 +148,17 @@ def get_my_nodes():
     response = {"message":"Meus nodes",
                 "nodes":nodes}
     return jsonify(response), 201
+
+@app.route('/new_block', methods = ['POST'])
+def new_block():
+    json = request.get_json()
+
+    new_block, nodes_updated = blockchain.check_progagate_block(new_block=json["chain"],
+                                     nodes_updated=json["nodes_updated"])
+    response = {"new_block":new_block,
+        "nodes_updated":nodes_updated}
+
+    return jsonify(response), 200
 
 @app.route('/ping',methods= ['GET'])
 def ping():
