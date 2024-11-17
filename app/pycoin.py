@@ -90,7 +90,7 @@ class Blockchain:
 
         # Se comunica com os demais nós dá rede
         self.propagate_new_blockchain(blockchain_actual=self.blockchain, 
-                                      nodes_updated=self.my_node)
+                                      nodes_updated=[self.my_node])
 
         return block
 
@@ -161,7 +161,7 @@ class Blockchain:
                 try:
                     url = f'http://{node}/new_blockchain'
                     print(f"Propagação de blocos: {self.my_node} ---> {node}")
-
+                    breakpoint()
                     response = requests.post(url, json={"chain": blockchain_actual,
                                                         "nodes_updated":nodes_updated})
                     if response.status_code == 200:
@@ -198,10 +198,16 @@ class Blockchain:
             self.propagate_new_blockchain(blockchain_actual=self.blockchain, 
                                           nodes_updated=nodes_updated)
             print("A cadeia foi substituída pela mais longa disponível.")
-            return True
+            response = {"message":"A cadeia foi substituída pela mais longa disponível.",
+                        "new_blockchain":new_blockchain,
+                        "nodes_updated":nodes_updated}
+            return response
         else:
             print("A cadeia local já é a mais longa ou nenhuma cadeia válida foi encontrada.")
-            return False
+            response = {"message":"A cadeia local já é a mais longa ou nenhuma cadeia válida foi encontrada.",
+                        "new_blockchain":[],
+                        "nodes_updated":[]}
+            return response
 
 
     def add_node(self, address):

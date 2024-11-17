@@ -152,11 +152,10 @@ def get_my_nodes():
 @app.route('/new_blockchain', methods = ['POST'])
 def new_blockchain():
     json = request.get_json()
-
-    new_blockchain, nodes_updated = blockchain.check_progagate_blockchain(new_blockchain=json["chain"],
+    
+    print("INFO>>>>>", json['nodes_updated'])
+    response = blockchain.check_progagate_blockchain(new_blockchain=json["chain"],
                                      nodes_updated=json["nodes_updated"])
-    response = {"new_blockchain":new_blockchain,
-        "nodes_updated":nodes_updated}
 
     return jsonify(response), 200
 
