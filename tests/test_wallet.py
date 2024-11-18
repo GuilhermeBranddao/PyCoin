@@ -24,7 +24,6 @@ def create_transaction(sender_private_key, sender_public_key, recipient_address,
         public_key_sender=sender_public_key,
     )
 
-
 def test_gererate_wallet(client):
     response = client.get("wallet/generate_wallet")
 

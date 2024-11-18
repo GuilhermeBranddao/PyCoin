@@ -15,7 +15,7 @@ blockchain = Blockchain(
 )
 
 
-@app.route('/wallet', methods=['GET'])
+@app.route('/wallet', methods=['GET']) # OK
 def wallet():
     try:
         wallet = Wallet()
@@ -185,7 +185,7 @@ def new_blockchain():
     return jsonify(response), 200
 
 
-@app.route('/ping', methods=['GET'])
+@app.route('/ping', methods=['GET']) # OK
 def ping():
     response = {'message': 'pong'}
     return jsonify(response), 200

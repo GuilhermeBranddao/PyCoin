@@ -5,26 +5,23 @@ import os
 from http import HTTPStatus
 from pathlib import Path
 from urllib.parse import urlparse
-
 import requests
 
+from pycoin.wallet import Wallet
+from pycoin.settings import Settings
 from pycoin.transaction import Transaction
 
-
+transaction = Transaction()
+settings = Settings()
 class Blockchain:
-    def __init__(
-        self,
-        my_node,
-        list_node_valid: list = ['127.0.0.1:5000'],
-        block_file_path='block.json',
-        nodes_file_path='nodes.json',
-    ):
+    def __init__(self,):
         self.block_file_path = Path(
-            os.path.join('app', 'data', 'blockchain', block_file_path)
+            os.path.join('pycoin', 'data', 'blockchain', settings.BLOCK_FILENAME)
         )
-        self.nodes_file_path = Path(os.path.join('app', 'data', 'nodes', nodes_file_path))
-        self.nodes = self.load_nodes(list_node_valid)
-        self.my_node = my_node
+        self.nodes_file_path = Path(os.path.join('pycoin', 'data', 'nodes', 
+                                                 settings.NODES_FILENAME))
+        self.nodes = self.load_nodes(settings.BLOCK_FILENAME)
+        self.my_node = settings.MY_NODE
         self.blockchain = self.load_blockchain()
         self.replace_chain()
         self.transactions = []
@@ -98,9 +95,11 @@ class Blockchain:
             'timestamp': str(datetime.datetime.now()),
             'proof': proof,
             'previous_hash': previous_hash,
-            'transactions': self.transactions,
+            'transactions': transaction.load_transactions(
+                transaction.transactions_file_path),
         }
-        self.transactions = []
+
+        transaction.clear_transactions(transaction.transactions_file_path)
 
         print(f'O node {self.my_node} conseguiu minerar um bloco!!!')
         self.blockchain.append(block)
@@ -161,24 +160,31 @@ class Blockchain:
             block_index += 1
         return True
 
-    def add_transaction(
-        self, private_key_sender, public_key_sender, recipient_address, amount
-    ):
-        transaction = Transaction(
-            private_key_sender=private_key_sender,
-            public_key_sender=public_key_sender,
-            recipient_address=recipient_address,
-            amount=amount,
-        )
-
-        # Usuário A assina a transação
-        transaction.sign_transaction()
-        encoded_data = transaction._decode_transaction_data(
-            transaction._get_transaction_data()
-        )
-        self.transactions.append(encoded_data)
-        previous_block = self.get_previous_block()
-        return previous_block['index'] + 1
+    #def add_transaction(
+    #    self, private_key_sender, public_key_sender, recipient_address, amount
+    #):
+    #    transaction = Transaction(
+    #        private_key_sender=private_key_sender,
+    #        public_key_sender=public_key_sender,
+    #        recipient_address=recipient_address,
+    #        amount=amount,
+    #    )
+#
+    #    # Gera a assinatura do remetente a partir da sua public key
+    #    public_key = Wallet.load_public_key_from_string(key_string=public_key_sender)
+    #    address = Wallet.generate_address(public_key=public_key)
+#
+    #    # Usuário A assina a transação
+    #    transaction.sign_transaction()
+#
+    #    transaction_data = {
+    #        'address_sender': address,
+    #        'recipient_address': recipient_address,
+    #        'amount': float(amount),
+    #    }
+    #    self.transactions.append(transaction_data)
+    #    previous_block = self.get_previous_block()
+    #    return previous_block['index'] + 1
 
     def propagate_new_blockchain(self, blockchain_actual, nodes_updated: list):
         for node in self.nodes['nodes']:
@@ -191,11 +197,8 @@ class Blockchain:
                 try:
                     url = f'http://{node}/new_blockchain'
                     print(f'Propagação de blocos: {self.my_node} ---> {node}')
-                    breakpoint()
-                    response = requests.post(
-                        url,
-                        json={'chain': blockchain_actual, 'nodes_updated': nodes_updated},
-                    )
+                    response = requests.post(url,
+                        json={'chain': blockchain_actual, 'nodes_updated': nodes_updated})
                     if response.status_code == HTTPStatus.OK:
                         print(f'Sucesso ao notificar {node}')
                     else:

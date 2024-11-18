@@ -11,8 +11,7 @@ notebooks/
 *.ipynb
 
 # 
-pycoin/data/blockchain/
-pycoin/data/nodes/
+pycoin/data/
 
 
 # Distribution / packaging
