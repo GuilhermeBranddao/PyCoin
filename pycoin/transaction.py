@@ -1,13 +1,15 @@
+import json
+import os
+from pathlib import Path
+from typing import Dict
+
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import ec
-from pathlib import Path
-import os
-from pycoin.wallet import Wallet
-from pycoin.settings import Settings
-import json
-from typing import Dict
+from cryptography.hazmat.primitives.asymmetric.ec import EllipticCurvePrivateKey
 
+from pycoin.settings import Settings
+from pycoin.wallet import Wallet
 
 settings = Settings()
 # Tamanho truncado do endereço em bytes
@@ -16,7 +18,7 @@ CHECKSUM_LENGTH = 4  # Checksum de 4 bytes
 
 
 class Transaction:
-    def __init__(self):#recipient_address, amount, private_key_sender, public_key_sender):
+    def __init__(self):
         """
         Inicializa uma nova transação.
 
@@ -25,24 +27,24 @@ class Transaction:
         :param recipient: O endereço do destinatário.
         :param amount: O valor a ser transferido.
         """
-        #self.recipient_address = recipient_address
-        #self.amount = amount
-        #self.private_key = Wallet.load_private_key_from_string(private_key_sender)
-        #self.public_key = Wallet.load_public_key_from_string(public_key_sender)
 
         self.transactions_file_path = Path(
             os.path.join('pycoin', 'data', 'transaction', settings.TRANSACTION_FILENAME)
         )
-        self.transactions_file_path.parent.mkdir(parents=True, exist_ok=True)
 
-    def sign_transaction(self, public_key, private_key, 
-                         recipient_address, amount):
+    def sign_transaction(self, public_key: str, private_key: str,
+                         recipient_address: str, amount: float):
         """
         Assina a transação usando a chave privada do remetente.
 
         :param private_key: A chave privada do remetente.
         :param public_key_sender: A chave pública correspondente.
         """
+
+        # Converte
+        private_key = Wallet.load_private_key_from_string(key_string=private_key)
+        public_key = Wallet.load_public_key_from_string(key_string=public_key)
+
         self.address_sender = Wallet.generate_address(public_key=public_key)
 
         if not Wallet.validate_key_pair(private_key=private_key,
@@ -67,15 +69,19 @@ class Transaction:
         else:
             raise ValueError('Transação inválida! A assinatura não corresponde.')
 
-    def verify_signature(self, public_key, recipient_address, amount):
+    def verify_signature(self, public_key: EllipticCurvePrivateKey,
+                         recipient_address: str, amount: float):
         """
         Verifica a assinatura da transação usando a chave pública do remetente.
 
         :param public_key: A chave pública do remetente.
         :return: True se a assinatura for válida, False caso contrário.
         """
+
+        address_sender = Wallet.generate_address(public_key=public_key)
+
         transaction_data = self._get_transaction_data(
-            self.address_sender, recipient_address, amount
+            address_sender, recipient_address, amount
         )
 
         try:
@@ -112,17 +118,21 @@ class Transaction:
             'recipient_address': recipient_address,
             'amount': float(amount),
         }
-    
+
     @staticmethod
-    def save_transactions(transactions_file_path: str, transaction_data: Dict):
+    def save_transactions(transactions_file_path: Path, transaction_data: Dict):
         """
         Salva as transações do arquivo JSON, mantendo a estrutura básica.
         """
         print('Salvando transações')
-        
+
         # Inicializa a estrutura de dados para armazenar transações
         transactions = {"transactions": []}
-        
+
+        # if not transactions_file_path.exists():
+        #    transactions_file_path.parent.mkdir(parents=True, exist_ok=True)
+        #    transactions_file_path.touch()
+
         # Tenta carregar transações existentes no arquivo
         try:
             with open(transactions_file_path, 'r', encoding='utf-8') as file:
@@ -133,6 +143,7 @@ class Transaction:
         except json.JSONDecodeError:
             # Arquivo vazio ou com dados inválidos, inicia a estrutura padrão
             print(f"{transactions_file_path} contém dados inválidos, sobrescrevendo com uma estrutura válida.")
+            return False
 
         # Adiciona a nova transação ao conjunto de transações existentes
         transactions["transactions"].append(transaction_data)
@@ -141,12 +152,17 @@ class Transaction:
         with open(transactions_file_path, 'w', encoding='utf-8') as file:
             json.dump(transactions, file, indent=4)
 
+        return True
+
     @staticmethod
-    def load_transactions(transactions_file_path:str):
+    def load_transactions(transactions_file_path: Path):
         """
         Carrega todas as transações do arquivo JSON, mantendo a estrutura básica.
         """
         print("Carregando transações")
+        if not transactions_file_path.exists():
+            transactions_file_path.parent.mkdir(parents=True, exist_ok=True)
+            transactions_file_path.touch()
         with open(transactions_file_path, 'r', encoding='utf-8') as file:
             return json.load(file)
 
@@ -156,7 +172,7 @@ class Transaction:
         Remove todas as transações do arquivo JSON.
         """
         print('Limpando transações')
-        
+
         # Define a estrutura vazia padrão
         empty_transactions = {"transactions": []}
 
@@ -165,22 +181,22 @@ class Transaction:
             json.dump(empty_transactions, file, indent=4)
 
         print(f"Todas as transações foram removidas de {transactions_file_path}.")
-    
-    def add_transaction(self, private_key_sender, public_key_sender, 
-                        recipient_address, amount):
-        
-        print("Adicionando transição")
-        # Gera a assinatura do remetente a partir da sua public key
-        private_key = Wallet.load_private_key_from_string(key_string=private_key_sender)
-        public_key = Wallet.load_public_key_from_string(key_string=public_key_sender)
-        address = Wallet.generate_address(public_key=public_key)
 
+    def add_transaction(self, private_key_sender: str, public_key_sender: str,
+                        recipient_address: str, amount: float):
+
+        print("Adicionando transição")
         self.sign_transaction(
-            public_key, private_key, recipient_address, amount
+            private_key=private_key_sender,
+            public_key=public_key_sender,
+            recipient_address=recipient_address, amount=amount
         )
 
+        public_key = Wallet.load_public_key_from_string(key_string=public_key_sender)
+        address_sender = Wallet.generate_address(public_key=public_key)
+
         transaction_data = {
-            'address_sender': address,
+            'address_sender': address_sender,
             'recipient_address': recipient_address,
             'amount': float(amount),
         }
@@ -188,6 +204,6 @@ class Transaction:
         self.save_transactions(transactions_file_path=self.transactions_file_path,
                                 transaction_data=transaction_data)
 
-        #previous_block = self.get_previous_block()
-        #return previous_block['index'] + 1
+        # previous_block = self.get_previous_block()
+        # return previous_block['index'] + 1
         return True

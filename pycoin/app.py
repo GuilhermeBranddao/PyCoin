@@ -4,9 +4,7 @@ from fastapi import FastAPI
 
 from pycoin.pycoin import Blockchain
 from pycoin.routers import wallet
-from pycoin.schemas import AddTransaction
 from pycoin.settings import Settings
-import uvicorn
 
 settings = Settings()
 app = FastAPI()
@@ -18,6 +16,7 @@ blockchain = Blockchain()
 app.include_router(wallet.router)
 
 # Miners routes
+
 
 @app.get('/mine_block')
 def mine_block():
@@ -37,21 +36,26 @@ def mine_block():
     }
     return response
 
+
 @app.get('/get_actual_chain')
 def get_actual_chain():
     pass
+
 
 @app.get('/replace_chain')
 def replace_chain():
     pass
 
+
 @app.post('/connect_node')
 def connect_node():
     pass
 
+
 @app.get('/is_valid')
 def is_valid():
     pass
+
 
 @app.get('/get_chain')
 def get_chain():
@@ -64,14 +68,11 @@ def get_chain():
 def get_my_nodes():
     pass
 
+
 @app.post('/new_blockchain')
 def new_blockchain():
     pass
 
-
-@app.get('/')
-def read_root():
-    return {'message': 'Olá Mundo!'}
 
 @app.get('/ping')
 def ping():
@@ -79,9 +80,8 @@ def ping():
     return response
 
 
-
 host, port = settings.MY_NODE.split(":")
 
-print(">>>>>>>")
-#uvicorn.run("pycoin.app:app", host=host, port=int(port), 
+
+# uvicorn.run("pycoin.app:app", host=host, port=int(port),
 #            reload=True)

@@ -5,20 +5,22 @@ import os
 from http import HTTPStatus
 from pathlib import Path
 from urllib.parse import urlparse
+
 import requests
 
-from pycoin.wallet import Wallet
 from pycoin.settings import Settings
 from pycoin.transaction import Transaction
 
 transaction = Transaction()
 settings = Settings()
+
+
 class Blockchain:
     def __init__(self,):
         self.block_file_path = Path(
             os.path.join('pycoin', 'data', 'blockchain', settings.BLOCK_FILENAME)
         )
-        self.nodes_file_path = Path(os.path.join('pycoin', 'data', 'nodes', 
+        self.nodes_file_path = Path(os.path.join('pycoin', 'data', 'nodes',
                                                  settings.NODES_FILENAME))
         self.nodes = self.load_nodes(settings.BLOCK_FILENAME)
         self.my_node = settings.MY_NODE
@@ -159,32 +161,6 @@ class Blockchain:
             previous_block = block
             block_index += 1
         return True
-
-    #def add_transaction(
-    #    self, private_key_sender, public_key_sender, recipient_address, amount
-    #):
-    #    transaction = Transaction(
-    #        private_key_sender=private_key_sender,
-    #        public_key_sender=public_key_sender,
-    #        recipient_address=recipient_address,
-    #        amount=amount,
-    #    )
-#
-    #    # Gera a assinatura do remetente a partir da sua public key
-    #    public_key = Wallet.load_public_key_from_string(key_string=public_key_sender)
-    #    address = Wallet.generate_address(public_key=public_key)
-#
-    #    # Usuário A assina a transação
-    #    transaction.sign_transaction()
-#
-    #    transaction_data = {
-    #        'address_sender': address,
-    #        'recipient_address': recipient_address,
-    #        'amount': float(amount),
-    #    }
-    #    self.transactions.append(transaction_data)
-    #    previous_block = self.get_previous_block()
-    #    return previous_block['index'] + 1
 
     def propagate_new_blockchain(self, blockchain_actual, nodes_updated: list):
         for node in self.nodes['nodes']:

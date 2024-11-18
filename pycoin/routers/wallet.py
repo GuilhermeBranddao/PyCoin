@@ -1,9 +1,8 @@
 from fastapi import APIRouter
 
-from pycoin.wallet import Wallet
-from pycoin.routers import wallet
 from pycoin.schemas import AddTransaction
 from pycoin.transaction import Transaction
+from pycoin.wallet import Wallet
 
 router = APIRouter(prefix='/wallet', tags=['wallet'])
 
@@ -33,33 +32,22 @@ def generate_wallet():
         }
         return response
 
+
 @router.post('/get_balance_and_transactions')
 def get_balance_and_transactions():
     pass
-
 
 
 @router.post('/add_transaction')
 def add_transaction(add_transaction: AddTransaction):
 
     transaction = Transaction()
-       #    private_key_sender=add_transaction.private_key_sender,
-       #    public_key_sender=add_transaction.public_key_sender,
-       #    recipient_address=add_transaction.recipient_address,
-       #    amount=add_transaction.amount,
-       #)
-    
+
     transaction.add_transaction(private_key_sender=add_transaction.private_key_sender,
                                 public_key_sender=add_transaction.public_key_sender,
                                 recipient_address=add_transaction.recipient_address,
                                 amount=add_transaction.amount,)
-    #index = blockchain.add_transaction(
-    #    private_key_sender=add_transaction.private_key_sender,
-    #    public_key_sender=add_transaction.public_key_sender,
-    #    recipient_address=add_transaction.recipient_address,
-    #    amount=add_transaction.amount,
-    #)
 
-    response = {'message': f'Nova transação adicionada'}
+    response = {'message': 'Nova transação adicionada'}
 
     return response
