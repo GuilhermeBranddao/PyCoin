@@ -1,0 +1,50 @@
+[tool.poetry]
+name = "pycoin"
+version = "0.1.0"
+description = "Criptomoenda em python"
+authors = ["Guilherme Brandão <guilhermebranddao@gmail.com>"]
+license = "Apache"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+fastapi = {extras = ["standard"], version = "^0.115.5"}
+
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.3"
+pytest-cov = "^6.0.0"
+taskipy = "^1.14.0"
+ruff = "^0.7.4"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+line-length = 90
+extend-exclude = ['migrations']
+
+[tool.ruff.lint]
+preview = true
+select = ['I', 'F', 'E', 'W', 'PL', 'PT']
+
+[tool.ruff.format]
+preview = true
+quote-style = 'single'
+
+[tool.pytest.ini_options]
+pythonpath = "."
+addopts = '-p no:warnings'
+
+[tool.taskipy.tasks]
+lint = 'ruff check .; ruff check . --diff'
+format = 'ruff check . --fix && ruff format .'
+run = 'fastapi dev pycoin/app.py'
+pre_test = 'task lint'
+test = 'pytest -s -x --cov=pycoin -vv'
+post_test = 'coverage html'
+
+
+
+
