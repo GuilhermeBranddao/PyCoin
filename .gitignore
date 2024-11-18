@@ -8,10 +8,11 @@ __pycache__/
 
 # my jupyters notebooks
 notebooks/
+*.ipynb
 
 # 
-app/data/blockchain/
-app/data/nodes/
+pycoin/data/blockchain/
+pycoin/data/nodes/
 
 
 # Distribution / packaging
