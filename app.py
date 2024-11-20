@@ -2,7 +2,7 @@ from uuid import uuid4
 
 from flask import Flask, jsonify, request
 
-from pycoin.pycoin import Blockchain
+from pycoin.blockchain.pycoin import Blockchain
 from pycoin.wallet import Wallet
 
 app = Flask(__name__)

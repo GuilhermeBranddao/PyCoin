@@ -1,13 +1,17 @@
 import datetime
 import hashlib
-import json
-import os
 from http import HTTPStatus
-from pathlib import Path
 from urllib.parse import urlparse
 
 import requests
 
+from pycoin.blockchain.tool_blockchain import (
+    load_blockchain,
+    load_nodes,
+    request_get,
+    save_blockchain,
+    save_nodes,
+)
 from pycoin.settings import Settings
 from pycoin.transaction import Transaction
 
@@ -17,79 +21,15 @@ settings = Settings()
 
 class Blockchain:
     def __init__(self,):
-        self.block_file_path = Path(
-            os.path.join('pycoin', 'data', 'blockchain', settings.BLOCK_FILENAME)
-        )
-        self.nodes_file_path = Path(os.path.join('pycoin', 'data', 'nodes',
-                                                 settings.NODES_FILENAME))
-        self.nodes = self.load_nodes(settings.BLOCK_FILENAME)
+        self.block_file_path = settings.BLOCK_FILENAME
+
+        self.nodes_file_path = settings.NODES_FILENAME
+
+        self.nodes = load_nodes(self.nodes_file_path)
         self.my_node = settings.MY_NODE
-        self.blockchain = self.load_blockchain()
+        self.blockchain = load_blockchain(self.block_file_path)
         self.replace_chain()
         self.transactions = []
-
-    @staticmethod
-    def create_genesis_block():
-        # Cria o bloco gênesis (primeiro bloco)
-        return {
-            'index': 0,
-            'timestamp': str(datetime.datetime.now()),
-            'previous_hash': '0',
-            'proof': 100,
-            'transactions': [],
-        }
-
-    def load_blockchain(self):
-        if self.block_file_path.exists():
-            with open(self.block_file_path, 'r', encoding='utf-8') as file:
-                return json.load(file)
-        else:
-            self.block_file_path.parent.mkdir(parents=True, exist_ok=True)
-            self.blockchain = [self.create_genesis_block()]
-            self.save_blockchain()
-            return self.blockchain
-
-    def save_blockchain(self):
-        print('Salvando blockchain')
-        with open(self.block_file_path, 'w', encoding='utf-8') as file:
-            json.dump(self.blockchain, file, indent=4)
-
-    def load_nodes(self, list_node_valid: list = []):
-        # FIXME: Não faz sentido o load_nodes receber uma lista de nodes pra salvar... :-(
-        if self.nodes_file_path.exists():
-            with open(self.nodes_file_path, 'r', encoding='utf-8') as file:
-                return json.load(file)
-        else:
-            self.nodes_file_path.parent.mkdir(parents=True, exist_ok=True)
-            self.nodes = {'nodes': list_node_valid}
-            has_node = self.check_node(list_node_valid)
-            if not has_node:
-                # raise ValueError("O node não existe.")
-                print('Esse node ainda não existe, mas por enquanto tudo bem :-)')
-            self.save_nodes()
-            return self.nodes
-
-    def save_nodes(self):
-        with open(self.nodes_file_path, 'w', encoding='utf-8') as file:
-            json.dump(self.nodes, file, indent=4)
-
-    @staticmethod
-    def check_node(node):
-        """
-        Checa se o node existe
-        """
-        try:
-            response = requests.get(f'http://{node}/ping')
-
-            if response.status_code == HTTPStatus.OK:
-                return True
-            else:
-                return False
-        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
-            return False
-        except requests.exceptions.RequestException:
-            # Pode adicionar um log ou outro tratamento aqui
-            return False
 
     def create_block(self, proof, previous_hash):
         block = {
@@ -105,7 +45,8 @@ class Blockchain:
 
         print(f'O node {self.my_node} conseguiu minerar um bloco!!!')
         self.blockchain.append(block)
-        self.save_blockchain()
+        save_blockchain(block_file_path=settings.BLOCK_FILENAME,
+                        blockchain=self.blockchain)
 
         # Se comunica com os demais nós dá rede
         self.propagate_new_blockchain(
@@ -119,25 +60,6 @@ class Blockchain:
         Obtem o último bloco
         """
         return self.blockchain[-1]
-
-    @staticmethod
-    def proof_of_work(previous_proof):
-        new_proof = 1
-        check_proof = False
-        while check_proof is False:
-            hash_operation = hashlib.sha256(
-                str(new_proof**2 - previous_proof**2).encode()
-            ).hexdigest()
-            if hash_operation[:4] == '0000':
-                check_proof = True
-            else:
-                new_proof += 1
-        return new_proof
-
-    @staticmethod
-    def hash(block):
-        encoded_block = json.dumps(block, sort_keys=True).encode()
-        return hashlib.sha256(encoded_block).hexdigest()
 
     def is_chain_valid(self, chain):
         """
@@ -163,7 +85,7 @@ class Blockchain:
         return True
 
     def propagate_new_blockchain(self, blockchain_actual, nodes_updated: list):
-        for node in self.nodes['nodes']:
+        for node in self.nodes:
             print(f'Verificando propagação: {self.my_node} ---> {node}')
 
             if self.my_node not in nodes_updated:
@@ -200,7 +122,7 @@ class Blockchain:
         # Substitui a cadeia se uma mais longa for encontrada
         if longest_blockchain:
             self.blockchain = longest_blockchain
-            self.save_blockchain()
+            save_blockchain(self.block_file_path)
 
             if self.my_node not in nodes_updated:
                 nodes_updated.append(self.my_node)
@@ -228,16 +150,16 @@ class Blockchain:
     def add_node(self, address):
         parsed_url = urlparse(address)
         new_node = parsed_url.netloc
-        if new_node not in self.nodes['nodes']:
-            self.nodes['nodes'].append(new_node)
-            self.save_nodes()
+        if new_node not in self.nodes:
+            self.nodes.append(new_node)
+            save_nodes()
 
     def replace_nodes(self, node):
-        response = self.request_get(f'http://{node}/get_my_nodes')
+        response = request_get(f'http://{node}/get_my_nodes')
         if response.status_code == HTTPStatus.OK:
-            if node not in self.nodes['nodes']:
-                self.nodes['nodes'].append(node)
-            self.save_nodes()
+            if node not in self.nodes:
+                self.nodes.append(node)
+            save_nodes()
 
     def replace_chain(self):
         """
@@ -246,16 +168,16 @@ class Blockchain:
 
         corretamente.
         """
-        if not self.nodes['nodes']:
+        if not self.nodes:
             print('Nenhum nó disponível na rede para sincronização.')
             return False
 
         longest_chain = None
         max_length = len(self.blockchain)
 
-        for node in self.nodes['nodes']:
+        for node in self.nodes:
             try:
-                response = self.request_get(f'http://{node}/get_chain')
+                response = request_get(f'http://{node}/get_chain')
 
                 if response.status_code == HTTPStatus.OK:
                     self.replace_nodes(node)
@@ -274,22 +196,9 @@ class Blockchain:
         # Substitui a cadeia se uma mais longa for encontrada
         if longest_chain:
             self.blockchain = longest_chain
-            self.save_blockchain()
+            save_blockchain(self.block_file_path)
             print('A cadeia foi substituída pela mais longa disponível.')
             return True
         else:
             print('A cadeia local já é a mais longa ou nenhuma válida foi encontrada.')
             return False
-
-    @staticmethod
-    def request_get(url):
-        """
-        Realiza uma requisição GET e lida com possíveis erros.
-        """
-        try:
-            response = requests.get(url, timeout=5)
-            response.raise_for_status()
-            return response
-        except requests.exceptions.RequestException as e:
-            print(f'Erro na requisição para {url}: {e}')
-            return None

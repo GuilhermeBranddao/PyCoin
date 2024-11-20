@@ -1,9 +1,12 @@
 from fastapi import APIRouter
 
-from pycoin.schemas import AddTransaction
+from pycoin.blockchain.tool_blockchain import load_blockchain
+from pycoin.schemas import AddTransaction, BalanceRequest
+from pycoin.settings import Settings
 from pycoin.transaction import Transaction
 from pycoin.wallet import Wallet
 
+settings = Settings()
 router = APIRouter(prefix='/wallet', tags=['wallet'])
 
 
@@ -33,9 +36,16 @@ def generate_wallet():
         return response
 
 
-@router.post('/get_balance_and_transactions')
-def get_balance_and_transactions():
-    pass
+@router.post('/balance_and_transactions')
+def balance_and_transactions(request: BalanceRequest):
+
+    transaction = Transaction()
+
+    address_transaction = transaction.check_wallet_balance(
+        blockchain=load_blockchain(block_file_path=settings.BLOCK_FILENAME),
+        wallet_address=request.address)
+
+    return address_transaction
 
 
 @router.post('/add_transaction')

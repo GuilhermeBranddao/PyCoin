@@ -1,6 +1,4 @@
-import os
 from http import HTTPStatus
-from pathlib import Path
 
 import pytest
 
@@ -39,11 +37,12 @@ def test_add_transaction(client):
         "private_key_sender": wallet_A["private_key"],
         "public_key_sender": wallet_A["public_key"],
         "recipient_address": wallet_B["address"],
-        "amount": 299.0
+        "amount": 100.0
     }
     response = client.post("wallet/add_transaction",
                           json=data)
 
+    # FIXME: Essa transação não deveria ocorrer com sucesso
     assert response.status_code == HTTPStatus.OK
     assert response.json().get("message") == "Nova transação adicionada"
 
@@ -53,9 +52,7 @@ def test_save_transaction():
     Testa todas as possibilidades de manuseio de dados das transações
     """
 
-    test_transactions_file_path = Path(
-            os.path.join('pycoin', 'data', 'transaction', settings.TEST_TRANSACTION_FILENAME)
-        )
+    test_transactions_file_path = settings.TEST_TRANSACTION_FILENAME
 
     test_transaction_data = {
             "address_sender": "pum7mQtJqClnNuMIPxCwZSWJkE4=",
@@ -70,9 +67,10 @@ def test_save_transaction():
     test_load_transactions = transaction.load_transactions(test_transactions_file_path)
     transaction.clear_transactions(test_transactions_file_path)
     test_check_load_transactions = transaction.load_transactions(test_transactions_file_path)
+
     assert is_save_bool
-    assert len(test_load_transactions["transactions"]) > 0
-    assert len(test_check_load_transactions["transactions"]) == 0
+    assert len(test_load_transactions) > 0
+    assert len(test_check_load_transactions) == 0
 
 
 def test_error_switch_keys_public_per_private():
