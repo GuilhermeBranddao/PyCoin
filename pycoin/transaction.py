@@ -2,6 +2,7 @@ import json
 from copy import deepcopy
 from pathlib import Path
 from typing import Any, Dict, List
+import datetime
 
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives import hashes
@@ -205,15 +206,34 @@ class Transaction:
 
         print(f"Todas as transações foram removidas de {transactions_file_path}.")
 
+    def add_transaction_miner_reward(self, miner_address: str, reward_amount: float):
+        """
+        Adiciona uma transação de recompensa para o minerador.
+        """
+        if reward_amount <= 0:
+            raise TransactionError('A recompensa deve ser maior que zero.', status_code=422)
+
+        # Cria a transação de recompensa
+        transaction_data = {
+            'address_sender': "MINING_REWARD",  # Indicador especial para transações de recompensa
+            'recipient_address': miner_address,
+            'amount': float(reward_amount),
+            'timestamp': str(datetime.datetime.now()),
+        }
+
+        # Salva a transação diretamente
+        self.save_transactions(transactions_file_path=self.transactions_file_path, transaction_data=transaction_data)
+
+        return True
+
     def add_transaction(self, private_key_sender: str, public_key_sender: str,
                         recipient_address: str, amount: float):
 
         # Verifica se a pessoa tem moedas necessarias
         public_key = Wallet.load_public_key_from_string(key_string=public_key_sender)
         address_sender = Wallet.generate_address(public_key)
-        wallet_balance = Transaction.check_wallet_balance(blockchain=load_chain(
-            block_file_path=settings.BLOCK_FILENAME),
-        wallet_address=address_sender)
+        chain=load_chain(block_file_path=settings.BLOCK_FILENAME)
+        wallet_balance = Transaction.check_wallet_balance(chain, wallet_address=address_sender)
 
         if amount <= 0:
             raise TransactionError('Não é possivel realizar ransações negativas.',
@@ -229,9 +249,6 @@ class Transaction:
             recipient_address=recipient_address, amount=amount
         )
 
-        public_key = Wallet.load_public_key_from_string(key_string=public_key_sender)
-        address_sender = Wallet.generate_address(public_key=public_key)
-
         transaction_data = {
             'address_sender': address_sender,
             'recipient_address': recipient_address,
@@ -246,7 +263,8 @@ class Transaction:
         return True
 
     @staticmethod
-    def check_wallet_balance(blockchain: List[Dict[str, Any]], wallet_address: str) -> Dict[str, Any]:
+    def check_wallet_balance(blockchain: List[Dict[str, Any]], 
+                             wallet_address: str) -> Dict[str, Any]:
         """
         Verifica o saldo e as transações de uma carteira.
         

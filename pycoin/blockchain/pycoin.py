@@ -35,7 +35,14 @@ class Blockchain:
         self.transactions = []
 
     def create_block(self):
+        # TODO: Validação dos blocos existentes
+        # TODO: Verifica se não há blocos já minerados
         previous_block = get_previous_block()
+
+        transaction.add_transaction_miner_reward( # FIXME: é mais útil criar uma função de add_transfecencia só pra o minerador
+            miner_address=settings.MINER_PUBLIC_ADDRESS,
+            reward_amount=settings.MINING_REWARD)
+
         block = {
             'index': len(self.blockchain),
             'timestamp': str(datetime.datetime.now()),
@@ -48,6 +55,7 @@ class Blockchain:
 
         print(f'O node {self.my_node} conseguiu minerar um bloco!!!')
         self.blockchain.append(block)
+
         save_blockchain(block_file_path=settings.BLOCK_FILENAME,
                         blockchain=self.blockchain)
 

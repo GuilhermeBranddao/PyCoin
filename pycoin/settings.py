@@ -14,6 +14,11 @@ class Settings(BaseSettings):
     MY_NODE: str
     TRANSACTION_FILENAME: Path
 
+    MINER_PRIVATE_KEY: str
+    MINER_PUBLIC_KEY: str
+    MINER_PUBLIC_ADDRESS: str
+    MINING_REWARD: float
+
     TEST_NODES_FILENAME: Path
     TEST_BLOCK_FILENAME: Path
     TEST_TRANSACTION_FILENAME: Path

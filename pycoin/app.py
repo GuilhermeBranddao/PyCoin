@@ -22,7 +22,6 @@ app.include_router(wallet.router)
 @app.get('/mine_block')
 def mine_block():
     block = blockchain.create_block()
-
     return block
 
 
