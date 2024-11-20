@@ -17,12 +17,13 @@ def create_genesis_block():
         'index': 0,
         'timestamp': str(datetime.datetime.now()),
         'previous_hash': '0',
+        'hash': calculate_hash({'block_geneses': '0'}),
         'proof': 100,
         'transactions': [],
     }]
 
 
-def load_blockchain(block_file_path: Path):
+def load_chain(block_file_path: Path):
     """
     Carrega os a blockchain de um arquivo JSON. Caso o contrario gere o bloco geneses.
     """
@@ -108,7 +109,7 @@ def check_node(node: str) -> bool:
         return False
 
 
-def proof_of_work(previous_proof):
+def proof_of_work(previous_proof: int):
     new_proof = 1
     check_proof = False
     while check_proof is False:
@@ -122,12 +123,12 @@ def proof_of_work(previous_proof):
     return new_proof
 
 
-def hash(block):
+def calculate_hash(block: dict):
     encoded_block = json.dumps(block, sort_keys=True).encode()
     return hashlib.sha256(encoded_block).hexdigest()
 
 
-def request_get(url):
+def request_get(url: str):
     """
     Realiza uma requisição GET e lida com possíveis erros.
     """
@@ -138,3 +139,37 @@ def request_get(url):
     except requests.exceptions.RequestException as e:
         print(f'Erro na requisição para {url}: {e}')
         return None
+
+
+def get_previous_block(block_file_path=settings.BLOCK_FILENAME):
+        """
+        Obtem o último bloco
+        """
+        blockchain = load_chain(block_file_path)
+        return blockchain[-1]
+
+
+def is_chain_valid(chain: list) -> bool:
+    """
+    Cada bloco tem um hash correto.
+    Cada bloco aponta para o hash do bloco anterior.
+    As transações no bloco são válidas.
+    """
+    for index in range(len(chain) - 1):
+        previous_block = chain[index]
+        next_block = chain[index + 1]
+
+        # Checa se o calculo do hash posterior é igual ao do proximo hash
+        is_match = next_block['hash'] == calculate_hash(previous_block)
+        if not is_match:
+            return False
+
+        # Realiza o calculo da prova de trabalho do hash posterior com o proximo hash
+        previous_proof = previous_block['proof']
+        next_proof = next_block['proof']
+        hash_operation = hashlib.sha256(
+            str(next_proof**2 - previous_proof**2).encode()
+        ).hexdigest()
+        if hash_operation[:4] != '0000':
+            return False
+    return True

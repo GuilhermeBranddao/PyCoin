@@ -3,7 +3,7 @@ from uuid import uuid4
 from fastapi import FastAPI, HTTPException, Request
 
 from pycoin.blockchain.pycoin import Blockchain
-from pycoin.blockchain.tool_blockchain import hash, proof_of_work
+from pycoin.blockchain.tool_blockchain import is_chain_valid
 from pycoin.routers import wallet
 from pycoin.schemas import NodeListRequest
 from pycoin.settings import Settings
@@ -21,21 +21,9 @@ app.include_router(wallet.router)
 # Miners routes
 @app.get('/mine_block')
 def mine_block():
-    previous_block = blockchain.get_previous_block()
-    previous_proof = previous_block['proof']
-    proof = proof_of_work(previous_proof)
-    previous_hash = hash(previous_block)
-    # TODO: Adicionar hash atual
-    block = blockchain.create_block(proof, previous_hash)
-    response = {
-        'message': 'Bloco minerado com sucesso!!!',
-        'index': block['index'],
-        'timestamp': block['timestamp'],
-        'proof': block['proof'],
-        'previous_hash': block['previous_hash'],
-        'transactions': block['transactions'],
-    }
-    return response
+    block = blockchain.create_block()
+
+    return block
 
 
 @app.get('/get_actual_chain')
@@ -88,7 +76,7 @@ def connect_node(request: NodeListRequest):
 
 @app.get('/is_valid')
 def is_valid():
-    is_valid = blockchain.is_chain_valid(blockchain.blockchain)
+    is_valid = is_chain_valid(blockchain.blockchain)
     if is_valid:
         response = {'message': 'Blockchain Válido'}
     else:

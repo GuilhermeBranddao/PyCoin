@@ -1,13 +1,16 @@
 import datetime
-import hashlib
 from http import HTTPStatus
 from urllib.parse import urlparse
 
 import requests
 
 from pycoin.blockchain.tool_blockchain import (
-    load_blockchain,
+    calculate_hash,
+    get_previous_block,
+    is_chain_valid,
+    load_chain,
     load_nodes,
+    proof_of_work,
     request_get,
     save_blockchain,
     save_nodes,
@@ -27,20 +30,20 @@ class Blockchain:
 
         self.nodes = load_nodes(self.nodes_file_path)
         self.my_node = settings.MY_NODE
-        self.blockchain = load_blockchain(self.block_file_path)
+        self.blockchain = load_chain(self.block_file_path)
         self.replace_chain()
         self.transactions = []
 
-    def create_block(self, proof, previous_hash):
+    def create_block(self):
+        previous_block = get_previous_block()
         block = {
-            'index': len(self.blockchain) + 1,
+            'index': len(self.blockchain),
             'timestamp': str(datetime.datetime.now()),
-            'proof': proof,
-            'previous_hash': previous_hash,
-            'transactions': transaction.load_transactions(
-                transaction.transactions_file_path),
+            'proof': proof_of_work(previous_proof=previous_block['proof']),
+            'hash': calculate_hash(previous_block),
+            'previous_hash': previous_block['hash'],
+            'transactions': transaction.load_transactions(transaction.transactions_file_path),
         }
-
         transaction.clear_transactions(transaction.transactions_file_path)
 
         print(f'O node {self.my_node} conseguiu minerar um bloco!!!')
@@ -54,35 +57,6 @@ class Blockchain:
         )
 
         return block
-
-    def get_previous_block(self):
-        """
-        Obtem o último bloco
-        """
-        return self.blockchain[-1]
-
-    def is_chain_valid(self, chain):
-        """
-        Cada bloco tem um hash correto.
-        Cada bloco aponta para o hash do bloco anterior.
-        As transações no bloco são válidas.
-        """
-        previous_block = chain[0]
-        block_index = 1
-        while block_index < len(chain):
-            block = chain[block_index]
-            if block['previous_hash'] != self.hash(previous_block):
-                return False
-            previous_proof = previous_block['proof']
-            proof = block['proof']
-            hash_operation = hashlib.sha256(
-                str(proof**2 - previous_proof**2).encode()
-            ).hexdigest()
-            if hash_operation[:4] != '0000':
-                return False
-            previous_block = block
-            block_index += 1
-        return True
 
     def propagate_new_blockchain(self, blockchain_actual, nodes_updated: list):
         for node in self.nodes:
@@ -115,7 +89,7 @@ class Blockchain:
         blockchain = new_blockchain
 
         # Verifica se a cadeia recebida é válida e maior
-        if length > max_length and self.is_chain_valid(blockchain):
+        if length > max_length and is_chain_valid(blockchain):
             max_length = length
             longest_blockchain = blockchain
 
@@ -186,7 +160,7 @@ class Blockchain:
                     chain = node_data.get('chain')
 
                     # Verifica se a cadeia recebida é válida e maior
-                    if length > max_length and self.is_chain_valid(chain):
+                    if length > max_length and is_chain_valid(chain):
                         max_length = length
                         longest_chain = chain
 

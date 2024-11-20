@@ -9,8 +9,9 @@ from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives.asymmetric.ec import EllipticCurvePrivateKey
 
 from pycoin.blockchain.tool_blockchain import (
-    load_blockchain,
+    load_chain,
 )
+from pycoin.exceptions.transaction_exceptions import TransactionError
 from pycoin.settings import Settings
 from pycoin.wallet import Wallet
 
@@ -178,6 +179,7 @@ class Transaction:
                     return transaction['transactions']
             except json.JSONDecodeError:
                 print("Erro ao carregar o arquivo. Retornando lista vazia.")
+                return []
             except:
                 print("Erro desconhecido")
 
@@ -209,12 +211,16 @@ class Transaction:
         # Verifica se a pessoa tem moedas necessarias
         public_key = Wallet.load_public_key_from_string(key_string=public_key_sender)
         address_sender = Wallet.generate_address(public_key)
-        wallet_balance = Transaction.check_wallet_balance(blockchain=load_blockchain(
+        wallet_balance = Transaction.check_wallet_balance(blockchain=load_chain(
             block_file_path=settings.BLOCK_FILENAME),
         wallet_address=address_sender)
 
-        if wallet_balance['balance'] >= amount:
-            raise ValueError('Saldo insuficiente para realizar a transação.')
+        if amount <= 0:
+            raise TransactionError('Não é possivel realizar ransações negativas.',
+            status_code=422)
+        if int(amount) >= int(wallet_balance['balance']):
+            raise TransactionError('Saldo insuficiente para realizar a transação.',
+            status_code=422)
 
         print("Adicionando transição")
         self.sign_transaction(
