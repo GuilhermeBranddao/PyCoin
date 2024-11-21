@@ -14,6 +14,7 @@ from pycoin.blockchain.tool_blockchain import (
     request_get,
     save_blockchain,
     save_nodes,
+    propagate_new_blockchain,
 )
 from pycoin.settings import Settings
 from pycoin.transaction import Transaction
@@ -27,7 +28,8 @@ class Blockchain:
         self.block_file_path = settings.BLOCK_FILENAME
 
         self.nodes_file_path = settings.NODES_FILENAME
-
+        
+        save_nodes()
         self.nodes = load_nodes(self.nodes_file_path)
         self.my_node = settings.MY_NODE
         self.blockchain = load_chain(self.block_file_path)
@@ -60,31 +62,14 @@ class Blockchain:
                         blockchain=self.blockchain)
 
         # Se comunica com os demais nós dá rede
-        self.propagate_new_blockchain(
-            blockchain_actual=self.blockchain, nodes_updated=[self.my_node]
+        propagate_new_blockchain(
+            chain=self.blockchain,
+            nodes=self.nodes,
         )
 
         return block
 
-    def propagate_new_blockchain(self, blockchain_actual, nodes_updated: list):
-        for node in self.nodes:
-            print(f'Verificando propagação: {self.my_node} ---> {node}')
-
-            if self.my_node not in nodes_updated:
-                nodes_updated.append(self.my_node)
-
-            if node not in nodes_updated:
-                try:
-                    url = f'http://{node}/new_blockchain'
-                    print(f'Propagação de blocos: {self.my_node} ---> {node}')
-                    response = requests.post(url,
-                        json={'chain': blockchain_actual, 'nodes_updated': nodes_updated})
-                    if response.status_code == HTTPStatus.OK:
-                        print(f'Sucesso ao notificar {node}')
-                    else:
-                        print(f'Erro ao notificar {node}: {response.status_code}')
-                except Exception as e:
-                    print(f'Erro ao conectar com {node}: {str(e)}')
+    
 
     def check_progagate_blockchain(self, new_blockchain, nodes_updated: list):
         """

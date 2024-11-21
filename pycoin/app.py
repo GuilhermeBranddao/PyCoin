@@ -8,6 +8,10 @@ from pycoin.routers import wallet
 from pycoin.schemas import NodeListRequest
 from pycoin.settings import Settings
 
+from pycoin.blockchain.tool_blockchain import (
+    load_nodes
+)
+
 settings = Settings()
 app = FastAPI()
 node_address = str(uuid4()).replace('-', '')
@@ -94,7 +98,7 @@ def get_chain():
 
 @app.get('/get_my_nodes')
 def get_my_nodes():
-    nodes = blockchain.load_nodes()
+    nodes = load_nodes()
     response = {'message': 'Meus nodes', 'nodes': nodes}
     return response
 

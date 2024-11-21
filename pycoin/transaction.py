@@ -181,8 +181,8 @@ class Transaction:
             except json.JSONDecodeError:
                 print("Erro ao carregar o arquivo. Retornando lista vazia.")
                 return []
-            except:
-                print("Erro desconhecido")
+            except Exception as e:
+                print(f"Error: {e}")
 
         # Cria
         # FIXME: Isso aqui é uma gambiarra só pra fazer o código rodar

@@ -39,8 +39,8 @@ def load_chain(block_file_path: Path):
                 return json.load(file)
         except json.JSONDecodeError:
             print("Erro ao carregar o arquivo. Retornando lista vazia.")
-        except:
-            print("Erro desconhecido")
+        except Exception as e:
+            print(f"Error: {e}")
 
     blockchain = create_genesis_block()
     save_blockchain(block_file_path=settings.BLOCK_FILENAME,
@@ -60,7 +60,7 @@ def save_blockchain(block_file_path: Path, blockchain):
         json.dump(blockchain, file, indent=4)
 
 
-def load_nodes(nodes_file_path: Path) -> list:
+def load_nodes(nodes_file_path: Path=settings.BLOCK_FILENAME) -> list:
     """
     Carrega os nós de um arquivo JSON. Caso o arquivo não exista, retorna uma lista vazia.
     """
@@ -75,13 +75,14 @@ def load_nodes(nodes_file_path: Path) -> list:
                 return json.load(file).get("nodes", [])
         except json.JSONDecodeError:
             print("Erro ao carregar o arquivo. Retornando lista vazia.")
-        except:
-            print("Erro desconhecido")
+        except Exception as e:
+            print(f"Error: {e}")
 
     return []
 
 
-def save_nodes(nodes_file_path: Path, list_nodes: list):
+def save_nodes(nodes_file_path: Path=settings.NODES_FILENAME, 
+               list_nodes: list=settings.LIST_NODE_VALID):
     """
     Salva uma lista de nós em um arquivo JSON. Adiciona somente nós válidos.
     """
@@ -99,6 +100,10 @@ def check_node(node: str) -> bool:
     """
     Verifica se um nó está acessível via HTTP.
     """
+    if node == settings.MY_NODE:
+        #return False
+        pass
+    print(f"http://{node}/ping")
     try:
         response = requests.get(f'http://{node}/ping', timeout=5)
         return response.status_code == HTTPStatus.OK
@@ -173,3 +178,28 @@ def is_chain_valid(chain: list) -> bool:
         if hash_operation[:4] != '0000':
             return False
     return True
+
+
+
+def propagate_new_blockchain(chain, 
+                            nodes,
+                            nodes_updated:list=settings.LIST_NODE_VALID,
+                            my_node:str=settings.MY_NODE):
+    for node in nodes:
+        print(f'Verificando propagação: {my_node} ---> {node}')
+
+        if my_node not in nodes_updated:
+            nodes_updated.append(my_node)
+
+        if node not in nodes_updated:
+            try:
+                url = f'http://{node}/new_blockchain'
+                print(f'Propagação de blocos: {my_node} ---> {node}')
+                response = requests.post(url,
+                    json={'chain': chain, 'nodes_updated': nodes_updated})
+                if response.status_code == HTTPStatus.OK:
+                    print(f'Sucesso ao notificar {node}')
+                else:
+                    print(f'Erro ao notificar {node}: {response.status_code}')
+            except Exception as e:
+                print(f'Erro ao conectar com {node}: {str(e)}')
