@@ -13,6 +13,10 @@ notebooks/
 # 
 pycoin/blockchain/data/
 
+# files instalation to rasp
+Python-3.12.0/
+Python-3.12.0.tgz
+
 
 # Distribution / packaging
 .Python
