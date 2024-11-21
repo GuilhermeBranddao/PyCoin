@@ -52,11 +52,12 @@ def balance_and_transactions(request: BalanceRequest):
 def add_transaction(add_transaction: AddTransaction):
 
     transaction = Transaction()
-
+    chain = load_chain(block_file_path=settings.BLOCK_FILENAME)
     transaction.add_transaction(private_key_sender=add_transaction.private_key_sender,
                                 public_key_sender=add_transaction.public_key_sender,
                                 recipient_address=add_transaction.recipient_address,
-                                amount=add_transaction.amount,)
+                                amount=add_transaction.amount,
+                                chain=chain)
 
     response = {'message': 'Nova transação adicionada'}
 

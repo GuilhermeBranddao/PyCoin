@@ -9,9 +9,6 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives.asymmetric.ec import EllipticCurvePrivateKey
 
-from pycoin.blockchain.tool_blockchain import (
-    load_chain,
-)
 from pycoin.exceptions.transaction_exceptions import TransactionError
 from pycoin.settings import Settings
 from pycoin.wallet import Wallet
@@ -207,7 +204,8 @@ class Transaction:
         print(f"Todas as transações foram removidas de {transactions_file_path}.")
         return True
 
-    def add_transaction_miner_reward(self, miner_address: str, reward_amount: float):
+    @staticmethod
+    def add_transaction_miner_reward(miner_address: str, reward_amount: float):
         """
         Adiciona uma transação de recompensa para o minerador.
         """
@@ -223,17 +221,20 @@ class Transaction:
         }
 
         # Salva a transação diretamente
-        self.save_transactions(transactions_file_path=self.transactions_file_path, transaction_data=transaction_data)
+        Transaction.save_transactions(transactions_file_path=settings.TRANSACTION_FILENAME,
+                                      transaction_data=transaction_data)
 
         return True
 
-    def add_transaction(self, private_key_sender: str, public_key_sender: str,
-                        recipient_address: str, amount: float):
+    def add_transaction(self, private_key_sender: str,
+                        public_key_sender: str,
+                        recipient_address: str,
+                        amount: float,
+                        chain: list):
 
         # Verifica se a pessoa tem moedas necessarias
         public_key = Wallet.load_public_key_from_string(key_string=public_key_sender)
         address_sender = Wallet.generate_address(public_key)
-        chain = load_chain(block_file_path=settings.BLOCK_FILENAME)
         wallet_balance = Transaction.check_wallet_balance(chain, wallet_address=address_sender)
 
         if amount <= 0:
