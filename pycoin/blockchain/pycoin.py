@@ -15,6 +15,7 @@ from pycoin.blockchain.tool_blockchain import (
     save_blockchain,
     save_nodes,
     propagate_new_blockchain,
+    check_node,
 )
 from pycoin.settings import Settings
 from pycoin.transaction import Transaction
@@ -29,7 +30,6 @@ class Blockchain:
 
         self.nodes_file_path = settings.NODES_FILENAME
         
-        save_nodes()
         self.nodes = load_nodes(self.nodes_file_path)
         self.my_node = settings.MY_NODE
         self.blockchain = load_chain(self.block_file_path)
@@ -89,14 +89,15 @@ class Blockchain:
         # Substitui a cadeia se uma mais longa for encontrada
         if longest_blockchain:
             self.blockchain = longest_blockchain
-            save_blockchain(self.block_file_path)
+            save_blockchain(blockchain=self.blockchain,
+                            block_file_path=self.block_file_path,)
 
             if self.my_node not in nodes_updated:
                 nodes_updated.append(self.my_node)
 
             # Continua a propagação
-            self.propagate_new_blockchain(
-                blockchain_actual=self.blockchain, nodes_updated=nodes_updated
+            propagate_new_blockchain(
+                chain=self.blockchain, nodes=self.nodes
             )
             print('A cadeia foi substituída pela mais longa disponível.')
             response = {
@@ -135,17 +136,22 @@ class Blockchain:
 
         corretamente.
         """
-        if not self.nodes:
+        nodes = load_nodes()
+
+        if not nodes:
             print('Nenhum nó disponível na rede para sincronização.')
             return False
 
         longest_chain = None
         max_length = len(self.blockchain)
 
-        for node in self.nodes:
+        for node in nodes:
+            if not check_node(node):
+                print(f"O node {node} está offline")
+                continue
+
             try:
                 response = request_get(f'http://{node}/get_chain')
-
                 if response.status_code == HTTPStatus.OK:
                     self.replace_nodes(node)
                     node_data = response.json()
@@ -163,9 +169,10 @@ class Blockchain:
         # Substitui a cadeia se uma mais longa for encontrada
         if longest_chain:
             self.blockchain = longest_chain
-            save_blockchain(self.block_file_path)
+            save_blockchain(blockchain=self.blockchain,
+                block_file_path=self.block_file_path)
             print('A cadeia foi substituída pela mais longa disponível.')
             return True
-        else:
-            print('A cadeia local já é a mais longa ou nenhuma válida foi encontrada.')
-            return False
+
+        print('A cadeia local já é a mais longa ou nenhuma válida foi encontrada.')
+        return False

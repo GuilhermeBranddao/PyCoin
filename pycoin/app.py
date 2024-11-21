@@ -104,8 +104,8 @@ def get_my_nodes():
 
 
 @app.post('/new_blockchain')
-def new_blockchain(request: Request):
-    json = request.json()
+async def new_blockchain(request: Request):
+    json = await request.json()
 
     response = blockchain.check_progagate_blockchain(
         new_blockchain=json['chain'],
