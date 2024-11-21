@@ -221,7 +221,7 @@ def propagate_new_blockchain(chain,
         print(f'Verificando propagação: {my_node} ---> {node}')
 
         try:
-            url = f'http://{node}/new_blockchain'
+            url = f'http://{node}/miner/new_blockchain'
             print(f'Propagação de blocos: {my_node} ---> {node}')
             response = requests.post(url,
                 json={'chain': chain, 'nodes_updated': nodes_updated})
@@ -265,7 +265,7 @@ def replace_chain() -> bool:
             continue
 
         try:
-            response = request_get(f'http://{node}/get_chain')
+            response = request_get(f'http://{node}/miner/get_chain')
             if response.status_code == HTTPStatus.OK:
                 node_data = response.json()
                 length = node_data.get('length')
