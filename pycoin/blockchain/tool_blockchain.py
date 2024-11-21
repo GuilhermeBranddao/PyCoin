@@ -60,7 +60,7 @@ def save_blockchain(block_file_path: Path, blockchain):
         json.dump(blockchain, file, indent=4)
 
 
-def load_nodes(nodes_file_path: Path=settings.BLOCK_FILENAME) -> list:
+def load_nodes(nodes_file_path: Path=settings.NODES_FILENAME) -> list:
     """
     Carrega os nós de um arquivo JSON. Caso o arquivo não exista, retorna uma lista vazia.
     """
@@ -69,6 +69,9 @@ def load_nodes(nodes_file_path: Path=settings.BLOCK_FILENAME) -> list:
 
     nodes_file_path.parent.mkdir(parents=True, exist_ok=True)
 
+    # Atualiza os nodes
+    save_nodes()
+
     if nodes_file_path.exists():
         try:
             with open(nodes_file_path, 'r', encoding='utf-8') as file:
@@ -76,7 +79,7 @@ def load_nodes(nodes_file_path: Path=settings.BLOCK_FILENAME) -> list:
         except json.JSONDecodeError:
             print("Erro ao carregar o arquivo. Retornando lista vazia.")
         except Exception as e:
-            print(f"Error: {e}")
+            print(f"Error in load_nodes:  {e}")
 
     return []
 
@@ -89,7 +92,9 @@ def save_nodes(nodes_file_path: Path=settings.NODES_FILENAME,
     if not isinstance(nodes_file_path, Path):
         raise ValueError("O parâmetro nodes_file_path deve ser um objeto do tipo Path.")
 
-    valid_nodes = [node for node in list_nodes if check_node(node)]
+    # TODO: check_nodetemporariamente comentado
+    #valid_nodes = [node for node in list_nodes if check_node(node)]
+    valid_nodes = list_nodes
     print(f"Salvando {len(valid_nodes)} nós válidos.")
 
     with open(nodes_file_path, 'w', encoding='utf-8') as file:
@@ -103,9 +108,10 @@ def check_node(node: str) -> bool:
     if node == settings.MY_NODE:
         #return False
         pass
-    print(f"http://{node}/ping")
     try:
-        response = requests.get(f'http://{node}/ping', timeout=5)
+        response = request_get(f'http://{node}/ping')
+        if not response:
+            return False
         return response.status_code == HTTPStatus.OK
     except (requests.ConnectionError, requests.Timeout):
         return False
