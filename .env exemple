@@ -1,4 +1,4 @@
-LIST_NODE_VALID="127.0.0.1:8001,192.168.1.100:8000"
+LIST_NODE_VALID="127.0.0.1:8001,127.0.0.1:8000"
 MY_NODE="127.0.0.1:8000"
 BLOCK_FILENAME="pycoin/blockchain/data/blockchain/block.json"
 NODES_FILENAME="pycoin/blockchain/data/nodes/nodes.json"
@@ -12,7 +12,12 @@ MINER_PUBLIC_ADDRESS = "vPK8yzHQgVxvTDvCBdlmxTGrOGI="
 MINING_REWARD = 50
 
 # Tests
+
 TEST_NODES_FILENAME="pycoin/blockchain/data/nodes/test_nodes.json"
 TEST_BLOCK_FILENAME="pycoin/blockchain/data/blockchain/test_block.json"
 TEST_TRANSACTION_FILENAME="pycoin/blockchain/data/transaction/test_transactions.json"
+
+TEST_MINER_PRIVATE_KEY = "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgWthL3MwWXCBxlpJWMFnntZNbfEo+tKzhPZ2ov+6pzpehRANCAASmRLYK8qkM57uTA4DR+a+krTHgSDNQttGsm7RHz72t47Ykgfb3xCfEAZZZSThvvsQY4HDRJf56zjfRhjGCxMp1"
+TEST_MINER_PUBLIC_KEY = "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEpkS2CvKpDOe7kwOA0fmvpK0x4EgzULbRrJu0R8+9reO2JIH298QnxAGWWUk4b77EGOBw0SX+es430YYxgsTKdQ=="
+TEST_MINER_PUBLIC_ADDRESS = "p2SbWoT9K0gJQf78leNZ1AgXjU0="
 
