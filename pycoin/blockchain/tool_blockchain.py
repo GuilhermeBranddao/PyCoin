@@ -111,6 +111,7 @@ def check_node(node: str) -> bool:
     try:
         response = request_get(f'http://{node}/ping')
         if not response:
+            print(f"O node {node} está offline")
             return False
         return response.status_code == HTTPStatus.OK
     except (requests.ConnectionError, requests.Timeout):
@@ -192,20 +193,19 @@ def propagate_new_blockchain(chain,
                             nodes_updated:list=settings.LIST_NODE_VALID,
                             my_node:str=settings.MY_NODE):
     for node in nodes:
+        if not check_node(node) or node == my_node:
+            continue
+        
         print(f'Verificando propagação: {my_node} ---> {node}')
 
-        if my_node not in nodes_updated:
-            nodes_updated.append(my_node)
-
-        if node not in nodes_updated:
-            try:
-                url = f'http://{node}/new_blockchain'
-                print(f'Propagação de blocos: {my_node} ---> {node}')
-                response = requests.post(url,
-                    json={'chain': chain, 'nodes_updated': nodes_updated})
-                if response.status_code == HTTPStatus.OK:
-                    print(f'Sucesso ao notificar {node}')
-                else:
-                    print(f'Erro ao notificar {node}: {response.status_code}')
-            except Exception as e:
-                print(f'Erro ao conectar com {node}: {str(e)}')
+        try:
+            url = f'http://{node}/new_blockchain'
+            print(f'Propagação de blocos: {my_node} ---> {node}')
+            response = requests.post(url,
+                json={'chain': chain, 'nodes_updated': nodes_updated})
+            if response.status_code == HTTPStatus.OK:
+                print(f'Sucesso ao notificar {node}')
+            else:
+                print(f'Erro ao notificar {node}: {response.status_code}')
+        except Exception as e:
+            print(f'Erro ao conectar com {node}: {str(e)}')

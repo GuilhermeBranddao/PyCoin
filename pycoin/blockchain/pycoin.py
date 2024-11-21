@@ -147,7 +147,6 @@ class Blockchain:
 
         for node in nodes:
             if not check_node(node):
-                print(f"O node {node} está offline")
                 continue
 
             try:
