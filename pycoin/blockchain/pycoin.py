@@ -2,20 +2,18 @@ import datetime
 from http import HTTPStatus
 from urllib.parse import urlparse
 
-import requests
-
 from pycoin.blockchain.tool_blockchain import (
     calculate_hash,
+    check_node,
     get_previous_block,
     is_chain_valid,
     load_chain,
     load_nodes,
     proof_of_work,
+    propagate_new_blockchain,
     request_get,
     save_blockchain,
     save_nodes,
-    propagate_new_blockchain,
-    check_node,
 )
 from pycoin.settings import Settings
 from pycoin.transaction import Transaction
@@ -29,7 +27,7 @@ class Blockchain:
         self.block_file_path = settings.BLOCK_FILENAME
 
         self.nodes_file_path = settings.NODES_FILENAME
-        
+
         self.nodes = load_nodes(self.nodes_file_path)
         self.my_node = settings.MY_NODE
         self.blockchain = load_chain(self.block_file_path)
@@ -41,7 +39,7 @@ class Blockchain:
         # TODO: Verifica se não há blocos já minerados
         previous_block = get_previous_block()
 
-        transaction.add_transaction_miner_reward( # FIXME: é mais útil criar uma função de add_transfecencia só pra o minerador
+        transaction.add_transaction_miner_reward(
             miner_address=settings.MINER_PUBLIC_ADDRESS,
             reward_amount=settings.MINING_REWARD)
 
@@ -69,9 +67,8 @@ class Blockchain:
 
         return block
 
-    
-
-    def check_progagate_blockchain(self, new_blockchain, nodes_updated: list):
+    def check_progagate_blockchain(self, new_blockchain, 
+                                   nodes_updated: list):
         """
         Verifica se o bloco propagado é o mais maior
         """

@@ -48,7 +48,7 @@ def load_chain(block_file_path: Path):
     return blockchain
 
 
-def save_blockchain(block_file_path: Path, blockchain):
+def save_blockchain(block_file_path: Path, blockchain) -> bool:
     """
     Salva a blockchain em um arquivo JSON.
     """
@@ -59,8 +59,10 @@ def save_blockchain(block_file_path: Path, blockchain):
     with open(block_file_path, 'w', encoding='utf-8') as file:
         json.dump(blockchain, file, indent=4)
 
+    return True
 
-def load_nodes(nodes_file_path: Path=settings.NODES_FILENAME) -> list:
+
+def load_nodes(nodes_file_path: Path = settings.NODES_FILENAME) -> list:
     """
     Carrega os nós de um arquivo JSON. Caso o arquivo não exista, retorna uma lista vazia.
     """
@@ -84,8 +86,8 @@ def load_nodes(nodes_file_path: Path=settings.NODES_FILENAME) -> list:
     return []
 
 
-def save_nodes(nodes_file_path: Path=settings.NODES_FILENAME, 
-               list_nodes: list=settings.LIST_NODE_VALID):
+def save_nodes(nodes_file_path: Path = settings.NODES_FILENAME,
+               list_nodes: list = settings.LIST_NODE_VALID):
     """
     Salva uma lista de nós em um arquivo JSON. Adiciona somente nós válidos.
     """
@@ -93,7 +95,7 @@ def save_nodes(nodes_file_path: Path=settings.NODES_FILENAME,
         raise ValueError("O parâmetro nodes_file_path deve ser um objeto do tipo Path.")
 
     # TODO: check_nodetemporariamente comentado
-    #valid_nodes = [node for node in list_nodes if check_node(node)]
+    # valid_nodes = [node for node in list_nodes if check_node(node)]
     valid_nodes = list_nodes
     print(f"Salvando {len(valid_nodes)} nós válidos.")
 
@@ -106,7 +108,7 @@ def check_node(node: str) -> bool:
     Verifica se um nó está acessível via HTTP.
     """
     if node == settings.MY_NODE:
-        #return False
+        # return False
         pass
     try:
         response = request_get(f'http://{node}/ping')
@@ -121,17 +123,27 @@ def check_node(node: str) -> bool:
         return False
 
 
-def proof_of_work(previous_proof: int):
+def proof_of_work(previous_proof: int, difficulty: int = 4):
+    """
+    Gera a prova de trabalho com base na dificuldade fornecida.
+
+    :param previous_proof: A prova do bloco anterior.
+    :param difficulty: Número de zeros iniciais necessários no hash.
+    :return: O novo proof.
+    """
     new_proof = 1
     check_proof = False
-    while check_proof is False:
+    target = '0' * difficulty  # Define a meta baseada na dificuldade
+
+    while not check_proof:
         hash_operation = hashlib.sha256(
             str(new_proof**2 - previous_proof**2).encode()
         ).hexdigest()
-        if hash_operation[:4] == '0000':
+        if hash_operation[:difficulty] == target:
             check_proof = True
         else:
             new_proof += 1
+
     return new_proof
 
 
@@ -187,15 +199,14 @@ def is_chain_valid(chain: list) -> bool:
     return True
 
 
-
-def propagate_new_blockchain(chain, 
+def propagate_new_blockchain(chain,
                             nodes,
-                            nodes_updated:list=settings.LIST_NODE_VALID,
-                            my_node:str=settings.MY_NODE):
+                            nodes_updated: list = settings.LIST_NODE_VALID,
+                            my_node: str = settings.MY_NODE):
     for node in nodes:
         if not check_node(node) or node == my_node:
             continue
-        
+
         print(f'Verificando propagação: {my_node} ---> {node}')
 
         try:

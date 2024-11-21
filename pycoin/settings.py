@@ -23,6 +23,10 @@ class Settings(BaseSettings):
     TEST_BLOCK_FILENAME: Path
     TEST_TRANSACTION_FILENAME: Path
 
+    TEST_MINER_PRIVATE_KEY: str
+    TEST_MINER_PUBLIC_KEY: str
+    TEST_MINER_PUBLIC_ADDRESS: str
+
     # Para garantir que a string será convertida em uma lista
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

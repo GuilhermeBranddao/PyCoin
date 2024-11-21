@@ -1,8 +1,8 @@
+import datetime
 import json
 from copy import deepcopy
 from pathlib import Path
 from typing import Any, Dict, List
-import datetime
 
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives import hashes
@@ -191,7 +191,7 @@ class Transaction:
                                       transaction_data=[])
 
     @staticmethod
-    def clear_transactions(transactions_file_path: str):
+    def clear_transactions(transactions_file_path: str) -> bool:
         """
         Remove todas as transações do arquivo JSON.
         """
@@ -205,6 +205,7 @@ class Transaction:
             json.dump(empty_transactions, file, indent=4)
 
         print(f"Todas as transações foram removidas de {transactions_file_path}.")
+        return True
 
     def add_transaction_miner_reward(self, miner_address: str, reward_amount: float):
         """
@@ -232,7 +233,7 @@ class Transaction:
         # Verifica se a pessoa tem moedas necessarias
         public_key = Wallet.load_public_key_from_string(key_string=public_key_sender)
         address_sender = Wallet.generate_address(public_key)
-        chain=load_chain(block_file_path=settings.BLOCK_FILENAME)
+        chain = load_chain(block_file_path=settings.BLOCK_FILENAME)
         wallet_balance = Transaction.check_wallet_balance(chain, wallet_address=address_sender)
 
         if amount <= 0:
@@ -263,7 +264,7 @@ class Transaction:
         return True
 
     @staticmethod
-    def check_wallet_balance(blockchain: List[Dict[str, Any]], 
+    def check_wallet_balance(blockchain: List[Dict[str, Any]],
                              wallet_address: str) -> Dict[str, Any]:
         """
         Verifica o saldo e as transações de uma carteira.

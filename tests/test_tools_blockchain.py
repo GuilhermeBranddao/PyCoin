@@ -17,13 +17,13 @@ def test_create_genesis_block():
 
     assert all([key in list_keys for key in dict_genesis_block])
 
+
 def test_load_chain():
     chain = load_chain(settings.TEST_BLOCK_FILENAME)
     list_keys = ['index', 'timestamp', 'previous_hash',
                  'hash', 'proof', 'transactions']
 
     assert all([key in list_keys for key in chain])
-
 
 
 # task test tests/test_tools_blockchain.py::test_create_genesis_block

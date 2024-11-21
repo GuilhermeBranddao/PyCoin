@@ -3,14 +3,10 @@ from uuid import uuid4
 from fastapi import FastAPI, HTTPException, Request
 
 from pycoin.blockchain.pycoin import Blockchain
-from pycoin.blockchain.tool_blockchain import is_chain_valid
+from pycoin.blockchain.tool_blockchain import is_chain_valid, load_nodes
 from pycoin.routers import wallet
 from pycoin.schemas import NodeListRequest
 from pycoin.settings import Settings
-
-from pycoin.blockchain.tool_blockchain import (
-    load_nodes
-)
 
 settings = Settings()
 app = FastAPI()
