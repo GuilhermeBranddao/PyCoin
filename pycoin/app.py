@@ -12,14 +12,9 @@ settings = Settings()
 app = FastAPI()
 node_address = str(uuid4()).replace('-', '')
 
-
-# Wallet and transactions
-
 app.include_router(wallet.router)
 app.include_router(miner.router)
 
-
-# Others
 
 @app.get('/ping')
 def ping():

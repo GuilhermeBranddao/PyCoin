@@ -32,22 +32,14 @@ def load_chain(block_file_path: Path = settings.BLOCK_FILENAME) -> list:
     if not isinstance(block_file_path, Path):
         raise ValueError("O parâmetro block_file_path deve ser um objeto do tipo Path.")
 
-    block_file_path.parent.mkdir(parents=True, exist_ok=True)
-    block_file_path.touch()
-
     if block_file_path.exists():
         try:
             with open(block_file_path, 'r', encoding='utf-8') as file:
                 return json.load(file)
         except json.JSONDecodeError:
-            print("Erro ao carregar o arquivo. Retornando lista vazia.")
+            print("Erro ao carregar o arquivo chain. Retornando lista vazia.")
         except Exception as e:
             print(f"Error: {e}")
-
-    blockchain = create_genesis_block()
-    save_blockchain(block_file_path=settings.BLOCK_FILENAME,
-                    blockchain=blockchain)
-    return blockchain
 
 
 def save_blockchain(block_file_path: Path, blockchain) -> bool:
@@ -64,6 +56,41 @@ def save_blockchain(block_file_path: Path, blockchain) -> bool:
     return True
 
 
+def initialize_blockchain_file(block_file_path: Path = settings.BLOCK_FILENAME) -> bool:
+    print("Inicializando blockchain")
+
+    if not isinstance(block_file_path, Path):
+        raise ValueError("O parâmetro block_file_path deve ser um objeto do tipo Path.")
+
+    is_block_exists = block_file_path.exists()
+
+    block_file_path.parent.mkdir(parents=True, exist_ok=True)
+    block_file_path.touch()
+
+    if not is_block_exists:
+        print("Gerando bloco genesis")
+        blockchain = create_genesis_block()
+        save_blockchain(block_file_path=settings.BLOCK_FILENAME,
+                        blockchain=blockchain)
+
+    return True
+
+
+def initialize_node_file(nodes_file_path: Path = settings.NODES_FILENAME) -> bool:
+    print("Inicializando nodes")
+    nodes_file_path.parent.mkdir(parents=True, exist_ok=True)
+    nodes_file_path.touch()
+
+    if not nodes_file_path.exists():
+        raise ValueError("Não foi possivel criar o arquivo de node: {nodes_file_path}.")
+
+    # Atualiza os nodes
+    save_nodes(nodes_file_path=nodes_file_path,
+               list_new_nodes=settings.LIST_NODE_VALID)
+
+    return True
+
+
 def load_nodes(nodes_file_path: Path = settings.NODES_FILENAME) -> list:
     """
     Carrega os nós de um arquivo JSON. Caso o arquivo não exista, retorna uma lista vazia.
@@ -71,17 +98,12 @@ def load_nodes(nodes_file_path: Path = settings.NODES_FILENAME) -> list:
     if not isinstance(nodes_file_path, Path):
         raise ValueError("O parâmetro nodes_file_path deve ser um objeto do tipo Path.")
 
-    nodes_file_path.parent.mkdir(parents=True, exist_ok=True)
-
-    # Atualiza os nodes
-    save_nodes()
-
     if nodes_file_path.exists():
         try:
             with open(nodes_file_path, 'r', encoding='utf-8') as file:
                 return json.load(file).get("nodes", [])
         except json.JSONDecodeError:
-            print("Erro ao carregar o arquivo. Retornando lista vazia.")
+            print("Erro ao carregar o arquivo de nodes. Retornando lista vazia.")
         except Exception as e:
             print(f"Error in load_nodes:  {e}")
 
@@ -89,20 +111,25 @@ def load_nodes(nodes_file_path: Path = settings.NODES_FILENAME) -> list:
 
 
 def save_nodes(nodes_file_path: Path = settings.NODES_FILENAME,
-               list_nodes: list = settings.LIST_NODE_VALID) -> None:
+               list_new_nodes: list = settings.LIST_NODE_VALID) -> None:
     """
     Salva uma lista de nós em um arquivo JSON. Adiciona somente nós válidos.
     """
     if not isinstance(nodes_file_path, Path):
         raise ValueError("O parâmetro nodes_file_path deve ser um objeto do tipo Path.")
 
-    # TODO: check_nodetemporariamente comentado
+    # TODO: check_node temporariamente comentado
     # valid_nodes = [node for node in list_nodes if check_node(node)]
-    valid_nodes = list_nodes
-    print(f"Salvando {len(valid_nodes)} nós válidos.")
+
+    existing_node = load_nodes(nodes_file_path=nodes_file_path)
+    new_nodes = set(list_new_nodes + existing_node)
+
+    print(f"Salvando {len(new_nodes)} nós válidos.")
 
     with open(nodes_file_path, 'w', encoding='utf-8') as file:
-        json.dump({'nodes': valid_nodes}, file, indent=4)
+        json.dump({'nodes': list(new_nodes)}, file, indent=4)
+
+    return True
 
 
 def check_node(node: str) -> bool:

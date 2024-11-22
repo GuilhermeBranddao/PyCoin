@@ -120,33 +120,21 @@ class Transaction:
         }
 
     @staticmethod
-    def save_transactions(transactions_file_path: Path, transaction_data: Dict):
+    def save_transactions(transactions_file_path: Path, transaction_data: list) -> bool:
         """
         Salva as transações do arquivo JSON, mantendo a estrutura básica.
         """
         print('Salvando transações')
 
-        # Inicializa a estrutura de dados para armazenar transações
-        transactions = {"transactions": []}
-
         if not isinstance(transactions_file_path, Path):
-            raise ValueError("O parâmetro block_file_path deve ser um objeto do tipo Path.")
+            raise ValueError("O parâmetro transactions_file_path deve ser um objeto do tipo Path.")
 
-        try:
-            with open(transactions_file_path, 'r', encoding='utf-8') as file:
-                transactions = json.load(file)
-        except FileNotFoundError:
-            # Arquivo não existe, inicializa com a estrutura padrão
-            print(f"{transactions_file_path} não encontrado, criando um novo arquivo.")
-            transactions_file_path.parent.mkdir(parents=True, exist_ok=True)
-            transactions_file_path.touch()
-        except json.JSONDecodeError:
-            # Arquivo vazio ou com dados inválidos, inicia a estrutura padrão
-            print(f"{transactions_file_path} contém dados inválidos, sobrescrevendo com uma estrutura válida.")
-            return False
+        existing_transaction = Transaction.load_transactions(transactions_file_path)
+        new_transaction = set(transaction_data + existing_transaction)
 
         # Adiciona a nova transação ao conjunto de transações existentes
-        transactions["transactions"].append(transaction_data)
+        transactions = {"transactions": []}
+        transactions["transactions"].append(new_transaction)
 
         # Salva as transações atualizadas de volta ao arquivo
         with open(transactions_file_path, 'w', encoding='utf-8') as file:
@@ -155,16 +143,35 @@ class Transaction:
         return True
 
     @staticmethod
-    def load_transactions(transactions_file_path: Path):
+    def initialize_transaction_file(transaction_file_path: Path = settings.TRANSACTION_FILENAME) -> bool:
+        print("Inicializando transações")
+        if not isinstance(transaction_file_path, Path):
+            raise ValueError("O parâmetro transaction_file_path deve ser um objeto do tipo Path.")
+
+        is_file_exists = transaction_file_path.exists()
+
+        transaction_file_path.parent.mkdir(parents=True, exist_ok=True)
+        transaction_file_path.touch()
+
+        if not is_file_exists:
+            # Inicializa a estrutura de dados para armazenar transações
+            transactions = {"transactions": []}
+            with open(transaction_file_path, 'w', encoding='utf-8') as file:
+                json.dump(transactions, file, indent=4)
+
+        transaction_file_path.parent.mkdir(parents=True, exist_ok=True)
+        transaction_file_path.touch()
+
+        return True
+
+    @staticmethod
+    def load_transactions(transactions_file_path: Path) -> list:
         """
         Carrega todas as transações do arquivo JSON, mantendo a estrutura básica.
         """
         print("Carregando transações")
         if not isinstance(transactions_file_path, Path):
             raise ValueError("O parâmetro block_file_path deve ser um objeto do tipo Path.")
-
-        transactions_file_path.parent.mkdir(parents=True, exist_ok=True)
-        transactions_file_path.touch()
 
         if not transactions_file_path.exists():
             transactions_file_path.parent.mkdir(parents=True, exist_ok=True)
@@ -180,12 +187,6 @@ class Transaction:
                 return []
             except Exception as e:
                 print(f"Error: {e}")
-
-        # Cria
-        # FIXME: Isso aqui é uma gambiarra só pra fazer o código rodar
-        # O que está acontecendo é que se não tiver o arquivo o load não encontra e dá um erro
-        Transaction.save_transactions(transactions_file_path,
-                                      transaction_data=[])
 
     @staticmethod
     def clear_transactions(transactions_file_path: str) -> bool:
