@@ -6,7 +6,7 @@ from http import HTTPStatus
 from pathlib import Path
 from time import sleep
 from urllib.parse import urlparse
-
+import asyncio
 import requests
 
 from pycoin.settings import Settings
@@ -137,8 +137,8 @@ def check_node(node: str) -> bool:
     Verifica se um nó está acessível via HTTP.
     """
     if node == settings.MY_NODE:
-        # return False
-        pass
+        return False
+
     try:
         response = request_get(f'http://{node}/ping')
         if not response:
@@ -172,28 +172,34 @@ def get_previous_block(block_file_path: str = settings.BLOCK_FILENAME) -> dict:
         return blockchain[-1]
 
 
-def proof_of_work(previous_proof: int,
-                  difficulty: int = 4,
-                  is_sleep=True) -> int:
+async def proof_of_work(previous_proof: int, difficulty: int = 4, is_sleep=True) -> int:
     """
-    Gera a prova de trabalho com base na dificuldade fornecida.
+    Gera a prova de trabalho com base na dificuldade fornecida de forma assíncrona.
 
     :param previous_proof: A prova do bloco anterior.
     :param difficulty: Número de zeros iniciais necessários no hash.
+    :param is_sleep: Se deve simular uma pausa durante a mineração.
     :return: O novo proof.
     """
     target = '0' * difficulty  # Define a meta baseada na dificuldade
     new_proof = 1
 
     if is_sleep:
-        sleep(random.randint(20, 60))
+        # Substituímos o sleep bloqueante por await asyncio.sleep
+        segundos = random.randint(20, 60)
+        print(f'Esperendo por {segundos} segundos')
+        await asyncio.sleep(segundos)  # Faz uma pausa de forma assíncrona
 
     while True:
+        # Realiza o cálculo do hash
         hash_operation = hashlib.sha256(
             f"{new_proof**2 - previous_proof**2}".encode()
         ).hexdigest()
+        
+        # Verifica se o hash corresponde ao alvo
         if hash_operation[:difficulty] == target:
             return new_proof
+        
         new_proof += 1
 
 
@@ -285,7 +291,7 @@ def update_blockchain() -> bool:
     max_length = len(chain)
 
     for node in nodes:
-        if settings.MY_NODE == node or not check_node(node):
+        if not check_node(node):
             continue
 
         try:
@@ -315,45 +321,51 @@ def update_blockchain() -> bool:
     return False
 
 
-def start_block_mining():
+async def start_block_mining():
+    # FIXME: Essa função faz muitas coisas, ele realiza a mineração e reuni outras coisas
     # TODO: Validação dos blocos existentes
     # TODO: Verifica se não há blocos já minerados
 
-    previous_block = get_previous_block()
+    try:
+        previous_block = get_previous_block()
 
-    proof = proof_of_work(previous_proof=previous_block['proof'])
+        proof = await proof_of_work(previous_proof=previous_block['proof'])
 
-    chain = load_chain()
+        chain = load_chain()
 
-    Transaction.add_transaction_miner_reward(
-        miner_address=settings.MINER_PUBLIC_ADDRESS,
-        reward_amount=settings.MINING_REWARD)
+        Transaction.add_transaction_miner_reward(
+            miner_address=settings.MINER_PUBLIC_ADDRESS,
+            reward_amount=settings.MINING_REWARD)
 
-    block = {
-        'index': len(chain),
-        'timestamp': str(datetime.datetime.now()),
-        'proof': proof,
-        'hash': calculate_hash(previous_block),
-        'previous_hash': previous_block['hash'],
-        'transactions': Transaction.load_transactions(settings.TRANSACTION_FILENAME),
-    }
-    Transaction.clear_transactions(settings.TRANSACTION_FILENAME)
+        block = {
+            'index': len(chain),
+            'timestamp': str(datetime.datetime.now()),
+            'proof': proof,
+            'hash': calculate_hash(previous_block),
+            'previous_hash': previous_block['hash'],
+            'transactions': Transaction.load_transactions(settings.TRANSACTION_FILENAME),
+        }
+        Transaction.clear_transactions(settings.TRANSACTION_FILENAME)
 
-    print(f'O node {settings.MY_NODE} conseguiu minerar um bloco!!!')
-    chain.append(block)
+        print(f'O node {settings.MY_NODE} conseguiu minerar um bloco!!!')
+        chain.append(block)
 
-    save_blockchain(block_file_path=settings.BLOCK_FILENAME,
-                    blockchain=chain)
+        save_blockchain(block_file_path=settings.BLOCK_FILENAME,
+                        blockchain=chain)
 
-    # Se comunica com os demais nós dá rede
-    nodes = load_nodes()
-    propagate_new_blockchain(
-        chain=chain,
-        nodes=nodes,
-    )
+        # Se comunica com os demais nós dá rede
+        nodes = load_nodes()
+        propagate_new_blockchain(
+            chain=chain,
+            nodes=nodes,
+        )
 
-    return block
-
+        print(f">>>>>>Estou aqui agora<<<<<<")
+        # Retorna o bloco minerado
+        return {"new_block":"new_block"}
+    except Exception as e:
+        print(f"Erro ao minerar o bloco: {e}")
+        return None
 
 def check_progagate_blockchain(new_blockchain,
                                    nodes_updated: list):
