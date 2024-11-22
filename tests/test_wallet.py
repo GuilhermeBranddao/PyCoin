@@ -1,10 +1,10 @@
+import datetime
 from http import HTTPStatus
 
 import pytest
 
 from pycoin.settings import Settings
 from pycoin.transaction import Transaction
-import datetime
 
 settings = Settings()
 
