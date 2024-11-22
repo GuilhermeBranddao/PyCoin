@@ -16,9 +16,11 @@ transaction = Transaction()
 settings = Settings()
 
 
-def test_create_block():
+def test_start_block_mining():
 
     previous_block = get_previous_block()
+    proof = proof_of_work(previous_proof=previous_block['proof'], is_sleep=False)
+
     chain = load_chain(block_file_path=settings.TEST_BLOCK_FILENAME)
 
     transaction.add_transaction_miner_reward(
@@ -28,7 +30,7 @@ def test_create_block():
     block = {
             'index': len(chain),
             'timestamp': str(datetime.datetime.now()),
-            'proof': proof_of_work(previous_proof=previous_block['proof']),
+            'proof': proof,
             'hash': calculate_hash(previous_block),
             'previous_hash': previous_block['hash'],
             'transactions': transaction.load_transactions(transaction.transactions_file_path),

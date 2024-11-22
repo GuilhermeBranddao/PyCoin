@@ -3,11 +3,11 @@ from fastapi import APIRouter, HTTPException, Request
 from pycoin.blockchain.tool_blockchain import (
     add_node,
     check_progagate_blockchain,
-    create_block,
     is_chain_valid,
     load_chain,
     load_nodes,
-    replace_chain,
+    start_block_mining,
+    update_blockchain,
 )
 from pycoin.schemas import NodeListRequest
 from pycoin.settings import Settings
@@ -18,7 +18,7 @@ router = APIRouter(prefix='/miner', tags=['miner'])
 
 @router.get('/mine_block')
 def mine_block():
-    block = create_block()
+    block = start_block_mining()
     return block
 
 
@@ -32,9 +32,9 @@ def get_actual_chain():
     return response
 
 
-@router.get('/replace_chain')
+@router.get('/update_blockchain')
 def replace_the_chain():
-    is_chain_replaced = replace_chain()
+    is_chain_replaced = update_blockchain()
     chain = load_chain()
 
     if is_chain_replaced:

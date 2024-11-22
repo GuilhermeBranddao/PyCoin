@@ -1,8 +1,10 @@
 import datetime
 import hashlib
 import json
+import random
 from http import HTTPStatus
 from pathlib import Path
+from time import sleep
 from urllib.parse import urlparse
 
 import requests
@@ -70,9 +72,10 @@ def initialize_blockchain_file(block_file_path: Path = settings.BLOCK_FILENAME) 
     if not is_block_exists:
         print("Gerando bloco genesis")
         blockchain = create_genesis_block()
-        save_blockchain(block_file_path=settings.BLOCK_FILENAME,
+        save_blockchain(block_file_path=block_file_path,
                         blockchain=blockchain)
 
+    update_blockchain()
     return True
 
 
@@ -118,9 +121,6 @@ def save_nodes(nodes_file_path: Path = settings.NODES_FILENAME,
     if not isinstance(nodes_file_path, Path):
         raise ValueError("O parâmetro nodes_file_path deve ser um objeto do tipo Path.")
 
-    # TODO: check_node temporariamente comentado
-    # valid_nodes = [node for node in list_nodes if check_node(node)]
-
     existing_node = load_nodes(nodes_file_path=nodes_file_path)
     new_nodes = set(list_new_nodes + existing_node)
 
@@ -152,11 +152,6 @@ def check_node(node: str) -> bool:
         return False
 
 
-def calculate_hash(block: dict):
-    encoded_block = json.dumps(block, sort_keys=True).encode()
-    return hashlib.sha256(encoded_block).hexdigest()
-
-
 def request_get(url: str):
     """
     Realiza uma requisição GET e lida com possíveis erros.
@@ -165,8 +160,7 @@ def request_get(url: str):
         response = requests.get(url, timeout=5)
         response.raise_for_status()
         return response
-    except requests.exceptions.RequestException as e:
-        print(f'Erro na requisição para {url}: {e}')
+    except requests.exceptions.RequestException:
         return None
 
 
@@ -178,7 +172,9 @@ def get_previous_block(block_file_path: str = settings.BLOCK_FILENAME) -> dict:
         return blockchain[-1]
 
 
-def proof_of_work(previous_proof: int, difficulty: int = 4) -> int:
+def proof_of_work(previous_proof: int,
+                  difficulty: int = 4,
+                  is_sleep=True) -> int:
     """
     Gera a prova de trabalho com base na dificuldade fornecida.
 
@@ -188,6 +184,9 @@ def proof_of_work(previous_proof: int, difficulty: int = 4) -> int:
     """
     target = '0' * difficulty  # Define a meta baseada na dificuldade
     new_proof = 1
+
+    if is_sleep:
+        sleep(random.randint(20, 60))
 
     while True:
         hash_operation = hashlib.sha256(
@@ -270,12 +269,10 @@ def add_node(possible_new_nodes: list) -> None:
     save_nodes(list_nodes=nodes)
 
 
-def replace_chain() -> bool:
+def update_blockchain() -> bool:
     """
-    Substitui a blockchain local pela cadeia mais longa da rede, se encontrada.
+    Atualiza a blockchain local pela cadeia mais longa da rede, se encontrada.
     Também garante que a rede esteja conectada e que os novos nós sejam integrados.
-
-    corretamente.
     """
     nodes = load_nodes()
 
@@ -288,7 +285,7 @@ def replace_chain() -> bool:
     max_length = len(chain)
 
     for node in nodes:
-        if not check_node(node):
+        if settings.MY_NODE == node or not check_node(node):
             continue
 
         try:
@@ -318,13 +315,15 @@ def replace_chain() -> bool:
     return False
 
 
-def create_block():
+def start_block_mining():
     # TODO: Validação dos blocos existentes
     # TODO: Verifica se não há blocos já minerados
 
-    chain = load_chain()
-
     previous_block = get_previous_block()
+
+    proof = proof_of_work(previous_proof=previous_block['proof'])
+
+    chain = load_chain()
 
     Transaction.add_transaction_miner_reward(
         miner_address=settings.MINER_PUBLIC_ADDRESS,
@@ -333,7 +332,7 @@ def create_block():
     block = {
         'index': len(chain),
         'timestamp': str(datetime.datetime.now()),
-        'proof': proof_of_work(previous_proof=previous_block['proof']),
+        'proof': proof,
         'hash': calculate_hash(previous_block),
         'previous_hash': previous_block['hash'],
         'transactions': Transaction.load_transactions(settings.TRANSACTION_FILENAME),

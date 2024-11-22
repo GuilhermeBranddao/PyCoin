@@ -4,6 +4,7 @@ import pytest
 
 from pycoin.settings import Settings
 from pycoin.transaction import Transaction
+import datetime
 
 settings = Settings()
 
@@ -90,11 +91,12 @@ def test_save_transaction():
 
     test_transactions_file_path = settings.TEST_TRANSACTION_FILENAME
 
-    test_transaction_data = {
+    test_transaction_data = [{
             "address_sender": "pum7mQtJqClnNuMIPxCwZSWJkE4=",
             "recipient_address": "G7j6UydY3hNM-SzpRxyzIJf1I3M=",
-            "amount": 111.1
-        }
+            "amount": 111.1,
+            'timestamp': str(datetime.datetime.now()),
+        }]
 
     transaction = Transaction()
     is_save_bool = transaction.save_transactions(test_transactions_file_path,

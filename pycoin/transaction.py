@@ -130,11 +130,10 @@ class Transaction:
             raise ValueError("O parâmetro transactions_file_path deve ser um objeto do tipo Path.")
 
         existing_transaction = Transaction.load_transactions(transactions_file_path)
-        new_transaction = set(transaction_data + existing_transaction)
+        new_transaction = transaction_data + existing_transaction
 
         # Adiciona a nova transação ao conjunto de transações existentes
-        transactions = {"transactions": []}
-        transactions["transactions"].append(new_transaction)
+        transactions = {"transactions": new_transaction}
 
         # Salva as transações atualizadas de volta ao arquivo
         with open(transactions_file_path, 'w', encoding='utf-8') as file:
@@ -165,7 +164,7 @@ class Transaction:
         return True
 
     @staticmethod
-    def load_transactions(transactions_file_path: Path) -> list:
+    def load_transactions(transactions_file_path: Path = settings.TRANSACTION_FILENAME) -> list:
         """
         Carrega todas as transações do arquivo JSON, mantendo a estrutura básica.
         """
@@ -206,7 +205,9 @@ class Transaction:
         return True
 
     @staticmethod
-    def add_transaction_miner_reward(miner_address: str, reward_amount: float):
+    def add_transaction_miner_reward(miner_address: str,
+                                     reward_amount: float,
+                                     message_address: str = "MINING_REWARD"):
         """
         Adiciona uma transação de recompensa para o minerador.
         """
@@ -214,12 +215,12 @@ class Transaction:
             raise TransactionError('A recompensa deve ser maior que zero.', status_code=422)
 
         # Cria a transação de recompensa
-        transaction_data = {
-            'address_sender': "MINING_REWARD",  # Indicador especial para transações de recompensa
+        transaction_data = [{
+            'address_sender': message_address,  # Indicador especial para transações de recompensa
             'recipient_address': miner_address,
             'amount': float(reward_amount),
             'timestamp': str(datetime.datetime.now()),
-        }
+        }]
 
         # Salva a transação diretamente
         Transaction.save_transactions(transactions_file_path=settings.TRANSACTION_FILENAME,
@@ -252,11 +253,12 @@ class Transaction:
             recipient_address=recipient_address, amount=amount
         )
 
-        transaction_data = {
+        transaction_data = [{
             'address_sender': address_sender,
             'recipient_address': recipient_address,
             'amount': float(amount),
-        }
+            'timestamp': str(datetime.datetime.now())
+        }]
 
         self.save_transactions(transactions_file_path=self.transactions_file_path,
                                 transaction_data=transaction_data)
@@ -266,22 +268,24 @@ class Transaction:
         return True
 
     @staticmethod
-    def check_wallet_balance(blockchain: List[Dict[str, Any]],
-                             wallet_address: str) -> Dict[str, Any]:
+    def calculate_balance_and_transactions(chain, wallet_address):
         """
-        Verifica o saldo e as transações de uma carteira.
+        Calcula o saldo e compila uma lista de transações relevantes para um endereço de carteira.
         
-        :param blockchain: Lista de blocos da blockchain.
-        :param wallet_address: Endereço da carteira a ser verificado.
+        :param chain: Blockchain contendo os blocos e suas transações.
+        :param wallet_address: Endereço da carteira para calcular saldo e transações.
         :return: Dicionário contendo o saldo e as transações.
         """
         balance = 0
-        transactions = []
-        blockchain = deepcopy(blockchain)
-        for block in blockchain:
+        relevant_transactions = []
+
+        for block in chain:
+            block_timestamp = block.get('timestamp')
             for transaction in block.get('transactions', []):
                 if wallet_address in (transaction.get('recipient_address'), transaction.get('address_sender')):
                     amount = transaction.get('amount', 0)
+
+                    # Atualiza saldo baseado no tipo de transação
                     if transaction.get('recipient_address') == wallet_address:
                         balance += amount
                     else:
@@ -291,12 +295,51 @@ class Transaction:
                     # Adiciona dados relevantes à transação
                     transaction_info = {
                         **transaction,
-                        "timestamp": block.get('timestamp'),
-                        "amount": amount
+                        "timestamp": block_timestamp,
+                        "amount": amount,
                     }
-                    transactions.append(transaction_info)
+                    relevant_transactions.append(transaction_info)
 
         return {
             'balance': balance,
-            'transactions': transactions
+            'transactions': relevant_transactions
         }
+
+    @staticmethod
+    def check_wallet_balance(chain: List[Dict[str, Any]],
+                                wallet_address: str) -> Dict[str, Any]:
+        """
+        Verifica o saldo e as transações de uma carteira.
+        
+        :param blockchain: Lista de blocos da blockchain.
+        :param wallet_address: Endereço da carteira a ser verificado.
+        :return: Dicionário contendo o saldo e as transações.
+        """
+
+        transactions_in_file = Transaction.load_transactions()
+
+        file_transactions_data = Transaction.calculate_balance_and_transactions(
+            [{'timestamp': t.get('timestamp'), 'transactions': [t]} for t in transactions_in_file],
+            wallet_address
+        )
+
+        # Processar transações na blockchain
+        blockchain_data = Transaction.calculate_balance_and_transactions(
+            deepcopy(chain),  # Remove deepcopy se não for necessário
+            wallet_address
+        )
+
+        # Combinar os resultados
+        combined_balance = file_transactions_data['balance'] + blockchain_data['balance']
+        combined_transactions = file_transactions_data['transactions'] + blockchain_data['transactions']
+
+        # Ordenar transações por timestamp (opcional)
+        combined_transactions.sort(key=lambda tx: tx.get('timestamp', 0))
+
+        # Resultado final combinado
+        final_data = {
+            'balance': combined_balance,
+            'transactions': combined_transactions
+        }
+
+        return final_data
