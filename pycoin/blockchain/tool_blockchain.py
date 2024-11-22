@@ -144,6 +144,8 @@ def check_node(node: str) -> bool:
         if not response:
             print(f"O node {node} está offline")
             return False
+        
+        print(f"O node {node} está online")
         return response.status_code == HTTPStatus.OK
     except (requests.ConnectionError, requests.Timeout):
         return False
@@ -227,7 +229,8 @@ def is_chain_valid(chain: list, difficulty: int = 4) -> bool:
         current_block = chain[index]
 
         # Verifica o hash do bloco anterior
-        if current_block['previous_hash'] != calculate_hash(previous_block):
+        if current_block['hash'] != calculate_hash(previous_block):
+            print("Hash da blockchain invalido!!!")
             return False
 
         # Verifica a prova de trabalho do bloco atual
@@ -237,6 +240,7 @@ def is_chain_valid(chain: list, difficulty: int = 4) -> bool:
             f"{current_proof**2 - previous_proof**2}".encode()
         ).hexdigest()
         if hash_operation[:difficulty] != '0' * difficulty:
+            print("Prova de trabalho invalida invalido!!!")
             return False
 
     return True
@@ -332,6 +336,12 @@ async def start_block_mining():
         proof = await proof_of_work(previous_proof=previous_block['proof'])
 
         chain = load_chain()
+
+        is_valid = is_chain_valid()
+        if not is_valid:
+            # Se o bloco não for valido deve-se atualizar o bloco
+            update_blockchain()
+            return False
 
         Transaction.add_transaction_miner_reward(
             miner_address=settings.MINER_PUBLIC_ADDRESS,
