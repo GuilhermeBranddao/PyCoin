@@ -5,37 +5,57 @@ PyCoin é uma aplicação blockchain local para aprendizado e experimentação. 
 
 ### Passo 1: Clonar o repositório
 Clone o repositório do projeto para sua máquina local:
+
 `https://github.com/GuilhermeBranddao/PyCoin.git`
+
 ### Passo 2: Instalar dependências
 Escolha o método de instalação conforme o sistema operacional:
 
 #### Para Linux:
 Execute o script de instalação:
+
 `. install.sh`
 
 #### Para Windows:
 1. Baixe e instale o [Python 3.12](https://www.python.org/downloads/release/python-3120/).
 2. Execute o arquivo de instalação:
+
 `install.bat`
 
-### Passo 3: Executar o programa
-Rode a aplicação com o seguinte comando:
-`python app.py`
+3. Instale as dependencias do poetry:
+
+`poetry install`
+
+### Passo 3: Verifique se está tudo OK
+1. Execute os testes
+
+`task test`
+
+Se tudo deu certo, rode a aplicação com o seguinte comando:
+
+`task run`
 
   
-Pronto, agora você está rodando uma uma verção da PyCoin localmente em sua maquina
+Pronto, agora você está rodando uma verção do PyCoin localmente em sua maquina, para uma interface amigavel, acesse o [link](http://127.0.0.1:8000/docs) para ter acesso os endpoits e conseguir acesar as funcionalidades.
+
 
   
 ## **Observações**
-- O projeto ainda está em desenvolvimento e novas melhorias e funcionalidades estão sendo implementadas.
+- Esse projeto surgiu da minha vontade de aprender como a blockchain/criptomoedas funcionam e junto a isso a minha vontade de publicar tudo o que eu venho a anos estudando, acredito que não há maneira melhor de testar o seu conhecimento.
+
+- O projeto ainda está em fase de desenvolvimento, novas melhorias e funcionalidades estão sendo implementadas.
 
 - Feedbacks e contribuições são bem-vindos para tornar o PyCoin ainda melhor.
 
 ---
 ## **Referências**
 
-Este projeto foi inspirado pelo livro [Blockchain e Criptomoedas com Python](https://www.amazon.com.br/Blockchain-Criptomoedas-Python-Fernando-Feltrin-ebook/dp/B0935BY1V5/ref=pd_ci_mcx_mh_mcx_views_0_title).
+Este projeto foi inspirado pelos seguintes autores
+
+Ideia do projeto veio do livro [Blockchain e Criptomoedas com Python](https://www.amazon.com.br/Blockchain-Criptomoedas-Python-Fernando-Feltrin-ebook/dp/B0935BY1V5/ref=pd_ci_mcx_mh_mcx_views_0_title).
+
+Utilização do poery, fastAPI, criação de testes e entre outras coisas veio do [@dunossauro](https://dunossauro.com/), tanto pelo seu canal do youtube [Eduardo Mendes](https://www.youtube.com/@Dunossauro) quanto do seu site/projeto [FastApi do zero](https://fastapidozero.dunossauro.com/)
 
 ---
 
-Caso tenha dúvidas ou encontre problemas, entre em contato ou abra uma issue no repositório. 🚀
+Caso tenha dúvidas ou encontre problemas, entre em (contato)[guilhermebranddao@gmail.com] ou abra uma issue no repositório. 🚀
