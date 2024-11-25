@@ -4,6 +4,7 @@ import hashlib
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ec
+from cryptography.hazmat.primitives.asymmetric.ec import EllipticCurvePrivateKey
 
 # Tamanho truncado do endereço em bytes
 ADDRESS_LENGTH = 16  # 16 bytes (128 bits)
@@ -48,7 +49,7 @@ class Wallet:
         return private_key, public_key
 
     @staticmethod
-    def generate_address(public_key):
+    def generate_address(public_key: EllipticCurvePrivateKey):
         """
         Gera um endereço menor a partir da chave pública, com checksum.
         """
