@@ -21,13 +21,14 @@ def ping():
     response = {'message': 'pong'}
     return response
 
+
 @app.get('/status')
 def status():
-    response = {'online':True, # Se está conectado a outros blocos onlines
+    response = {'online': True,  # Se está conectado a outros blocos onlines
             'mining': True,
-            'date_lest_update_block':0, # timestemp do ultimo bloco minerado
-            'qtd_block_mining':0,
-            'qtd_coins_earned':0}
+            'date_lest_update_block': 0,  # timestemp do ultimo bloco minerado
+            'qtd_block_mining': 0,
+            'qtd_coins_earned': 0}
     return response
 
 # host, port = settings.MY_NODE.split(":")

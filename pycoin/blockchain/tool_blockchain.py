@@ -1,12 +1,12 @@
+import asyncio
 import datetime
 import hashlib
 import json
 import random
 from http import HTTPStatus
 from pathlib import Path
-from time import sleep
 from urllib.parse import urlparse
-import asyncio
+
 import requests
 
 from pycoin.settings import Settings
@@ -144,7 +144,7 @@ def check_node(node: str) -> bool:
         if not response:
             print(f"O node {node} está offline")
             return False
-        
+
         print(f"O node {node} está online")
         return response.status_code == HTTPStatus.OK
     except (requests.ConnectionError, requests.Timeout):
@@ -197,11 +197,11 @@ async def proof_of_work(previous_proof: int, difficulty: int = 4, is_sleep=True)
         hash_operation = hashlib.sha256(
             f"{new_proof**2 - previous_proof**2}".encode()
         ).hexdigest()
-        
+
         # Verifica se o hash corresponde ao alvo
         if hash_operation[:difficulty] == target:
             return new_proof
-        
+
         new_proof += 1
 
 
@@ -370,12 +370,13 @@ async def start_block_mining():
             nodes=nodes,
         )
 
-        print(f">>>>>>Estou aqui agora<<<<<<")
+        print(">>>>>>Estou aqui agora<<<<<<")
         # Retorna o bloco minerado
-        return {"new_block":"new_block"}
+        return {"new_block": "new_block"}
     except Exception as e:
         print(f"Erro ao minerar o bloco: {e}")
         return None
+
 
 def check_progagate_blockchain(new_blockchain,
                                    nodes_updated: list):

@@ -9,13 +9,12 @@ from pycoin.blockchain.tool_blockchain import (
     start_block_mining,
     update_blockchain,
 )
-
 from pycoin.miner.miner_manager import MinerManager
 from pycoin.schemas import NodeListRequest
 from pycoin.settings import Settings
 
 # Instância do gerenciador
-miner_manager = MinerManager()  
+miner_manager = MinerManager()
 settings = Settings()
 router = APIRouter(prefix='/miner', tags=['miner'])
 
@@ -25,10 +24,12 @@ async def start_mining():
     result = await miner_manager.start_mining(start_block_mining)
     return {"message": result}
 
+
 @router.get('/stop_mining')
 async def stop_mining():
     result = await miner_manager.stop_mining()
     return {"message": result}
+
 
 @router.get('/get_actual_chain')
 def get_actual_chain():

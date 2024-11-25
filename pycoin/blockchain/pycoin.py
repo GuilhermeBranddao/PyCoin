@@ -3,7 +3,6 @@ from pathlib import Path
 from pycoin.blockchain.tool_blockchain import (
     initialize_blockchain_file,
     initialize_node_file,
-    start_block_mining
 )
 from pycoin.settings import Settings
 from pycoin.transaction import Transaction

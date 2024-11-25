@@ -16,10 +16,10 @@ transaction = Transaction()
 settings = Settings()
 
 
-def test_start_block_mining():
+async def test_start_block_mining():
 
     previous_block = get_previous_block()
-    proof = proof_of_work(previous_proof=previous_block['proof'], is_sleep=False)
+    proof = await proof_of_work(previous_proof=previous_block['proof'], is_sleep=False)
 
     chain = load_chain(block_file_path=settings.TEST_BLOCK_FILENAME)
 
@@ -44,8 +44,8 @@ def test_start_block_mining():
                         blockchain=chain)
 
 
-def test_check_transaction_miner():
-    previous_block = get_previous_block(
+async def test_check_transaction_miner():
+    previous_block = await get_previous_block(
         block_file_path=settings.TEST_BLOCK_FILENAME)
 
     has_assress_miner_transaction = any([transaction['recipient_address'] == settings.TEST_MINER_PUBLIC_ADDRESS
