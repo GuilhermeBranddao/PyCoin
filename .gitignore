@@ -11,7 +11,7 @@ notebooks/
 *.ipynb
 
 # 
-pycoin/blockchain/data/
+pycoin/data/
 
 # files instalation to rasp
 Python-3.12.0/

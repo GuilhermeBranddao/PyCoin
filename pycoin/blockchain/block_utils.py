@@ -152,7 +152,7 @@ async def proof_of_work(previous_proof: int, difficulty: int = 4, is_sleep=True)
 
     if is_sleep:
         # Substituímos o sleep bloqueante por await asyncio.sleep
-        segundos = random.randint(20, 60)
+        segundos = random.randint(2, 6)
         print(f'Esperendo por {segundos} segundos')
         await asyncio.sleep(segundos)  # Faz uma pausa de forma assíncrona
 
@@ -243,7 +243,7 @@ def add_node(possible_new_nodes: list) -> None:
     save_nodes(list_nodes=nodes)
 
 
-def update_blockchain() -> bool:
+def update_blockchain(block_file_path: Path = settings.BLOCKCHAIN_FILE) -> bool:
     """
     Atualiza a blockchain local pela cadeia mais longa da rede, se encontrada.
     Também garante que a rede esteja conectada e que os novos nós sejam integrados.
@@ -255,7 +255,7 @@ def update_blockchain() -> bool:
         return False
 
     longest_chain = None
-    chain = load_chain()
+    chain = load_chain(block_file_path)
     max_length = len(chain)
 
     for node in nodes:
@@ -281,7 +281,7 @@ def update_blockchain() -> bool:
     if longest_chain:
         chain = longest_chain
         save_blockchain(blockchain=chain,
-            block_file_path=settings.BLOCKCHAIN_FILE)
+            block_file_path=block_file_path)
         print('A cadeia foi substituída pela mais longa disponível.')
         return True
 
@@ -289,19 +289,20 @@ def update_blockchain() -> bool:
     return False
 
 
-async def start_block_mining():
+async def start_block_mining(block_file_path: Path = settings.BLOCKCHAIN_FILE,
+                             transactions_file_path: Path = settings.TRANSACTIONS_FILE):
     # FIXME: Essa função faz muitas coisas, ele realiza a mineração e reuni outras coisas
     # TODO: Validação dos blocos existentes
     # TODO: Verifica se não há blocos já minerados
 
     try:
-        previous_block = get_previous_block()
+        previous_block = get_previous_block(block_file_path=block_file_path)
 
         proof = await proof_of_work(previous_proof=previous_block['proof'])
 
-        chain = load_chain()
+        chain = load_chain(block_file_path=block_file_path)
 
-        is_valid = is_chain_valid()
+        is_valid = is_chain_valid(chain)
         if not is_valid:
             # Se o bloco não for valido deve-se atualizar o bloco
             update_blockchain()
@@ -317,14 +318,14 @@ async def start_block_mining():
             'proof': proof,
             'hash': calculate_hash(previous_block),
             'previous_hash': previous_block['hash'],
-            'transactions': Transaction.load_transactions(settings.TRANSACTIONS_FILE),
+            'transactions': Transaction.load_transactions(transactions_file_path=transactions_file_path),
         }
-        Transaction.clear_transactions(settings.TRANSACTIONS_FILE)
+        Transaction.clear_transactions(transactions_file_path=transactions_file_path)
 
         print(f'O node {settings.NODES_FILE} conseguiu minerar um bloco!!!')
         chain.append(block)
 
-        save_blockchain(block_file_path=settings.BLOCKCHAIN_FILE,
+        save_blockchain(block_file_path=block_file_path,
                         blockchain=chain)
 
         # Se comunica com os demais nós dá rede
@@ -343,12 +344,13 @@ async def start_block_mining():
 
 
 def check_progagate_blockchain(new_blockchain,
-                                   nodes_updated: list):
+                               nodes_updated: list,
+                               block_file_path: Path = settings.BLOCKCHAIN_FILE,):
     """
     Verifica se o bloco propagado é o mais maior
     """
 
-    chain = load_chain()
+    chain = load_chain(block_file_path)
 
     longest_blockchain = None
     max_length = len(chain)
