@@ -1,10 +1,10 @@
 
 
-from pycoin.blockchain.tool_blockchain import (
+from pycoin.blockchain.block_utils import (
     create_genesis_block,
     get_previous_block,
 )
-from pycoin.settings import Settings
+from pycoin.settings.settings import Settings
 
 settings = Settings()
 
@@ -19,7 +19,7 @@ def test_create_genesis_block():
 
 
 def test_get_previous_block():
-    chain = get_previous_block(settings.TEST_BLOCK_FILENAME)
+    chain = get_previous_block(settings.TEST_BLOCKCHAIN_FILE)
     list_keys = ['index', 'timestamp', 'proof',
                  'hash', 'previous_hash', 'transactions']
 

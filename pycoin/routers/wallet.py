@@ -1,8 +1,8 @@
 from fastapi import APIRouter
 
-from pycoin.blockchain.tool_blockchain import load_chain
-from pycoin.schemas import AddTransaction, BalanceRequest
-from pycoin.settings import Settings
+from pycoin.blockchain.block_utils import load_chain
+from pycoin.schemas.schemas import AddTransaction, BalanceRequest
+from pycoin.settings.settings import Settings
 from pycoin.transaction import Transaction
 from pycoin.wallet import Wallet
 
@@ -42,7 +42,7 @@ def balance_and_transactions(request: BalanceRequest):
     transaction = Transaction()
 
     address_transaction = transaction.check_wallet_balance(
-        blockchain=load_chain(block_file_path=settings.BLOCK_FILENAME),
+        blockchain=load_chain(block_file_path=settings.BLOCKCHAIN_FILE),
         wallet_address=request.address)
 
     return address_transaction
@@ -52,7 +52,7 @@ def balance_and_transactions(request: BalanceRequest):
 def add_transaction(add_transaction: AddTransaction):
 
     transaction = Transaction()
-    chain = load_chain(block_file_path=settings.BLOCK_FILENAME)
+    chain = load_chain(block_file_path=settings.BLOCKCHAIN_FILE)
     transaction.add_transaction(private_key_sender=add_transaction.private_key_sender,
                                 public_key_sender=add_transaction.public_key_sender,
                                 recipient_address=add_transaction.recipient_address,
