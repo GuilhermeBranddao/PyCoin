@@ -9,7 +9,7 @@ from urllib.parse import urlparse
 
 import requests
 
-from pycoin.settings import Settings
+from pycoin.settings.settings import Settings
 from pycoin.transaction import Transaction
 
 settings = Settings()
@@ -27,7 +27,7 @@ def create_genesis_block() -> list:
     }]
 
 
-def load_chain(block_file_path: Path = settings.BLOCK_FILENAME) -> list:
+def load_chain(block_file_path: Path = settings.BLOCKCHAIN_FILE) -> list:
     """
     Carrega os a blockchain de um arquivo JSON. Caso o contrario gere o bloco geneses.
     """
@@ -58,7 +58,7 @@ def save_blockchain(block_file_path: Path, blockchain) -> bool:
     return True
 
 
-def initialize_blockchain_file(block_file_path: Path = settings.BLOCK_FILENAME) -> bool:
+def initialize_blockchain_file(block_file_path: Path = settings.BLOCKCHAIN_FILE) -> bool:
     print("Inicializando blockchain")
 
     if not isinstance(block_file_path, Path):
@@ -79,7 +79,7 @@ def initialize_blockchain_file(block_file_path: Path = settings.BLOCK_FILENAME) 
     return True
 
 
-def initialize_node_file(nodes_file_path: Path = settings.NODES_FILENAME) -> bool:
+def initialize_node_file(nodes_file_path: Path = settings.NODES_FILE) -> bool:
     print("Inicializando nodes")
     nodes_file_path.parent.mkdir(parents=True, exist_ok=True)
     nodes_file_path.touch()
@@ -94,7 +94,7 @@ def initialize_node_file(nodes_file_path: Path = settings.NODES_FILENAME) -> boo
     return True
 
 
-def load_nodes(nodes_file_path: Path = settings.NODES_FILENAME) -> list:
+def load_nodes(nodes_file_path: Path = settings.NODES_FILE) -> list:
     """
     Carrega os nós de um arquivo JSON. Caso o arquivo não exista, retorna uma lista vazia.
     """
@@ -113,7 +113,7 @@ def load_nodes(nodes_file_path: Path = settings.NODES_FILENAME) -> list:
     return []
 
 
-def save_nodes(nodes_file_path: Path = settings.NODES_FILENAME,
+def save_nodes(nodes_file_path: Path = settings.NODES_FILE,
                list_new_nodes: list = settings.LIST_NODE_VALID) -> None:
     """
     Salva uma lista de nós em um arquivo JSON. Adiciona somente nós válidos.
@@ -136,7 +136,7 @@ def check_node(node: str) -> bool:
     """
     Verifica se um nó está acessível via HTTP.
     """
-    if node == settings.MY_NODE:
+    if node == settings.NODES_FILE:
         return False
 
     try:
@@ -166,7 +166,7 @@ def request_get(url: str):
         return None
 
 
-def get_previous_block(block_file_path: str = settings.BLOCK_FILENAME) -> dict:
+def get_previous_block(block_file_path: str = settings.BLOCKCHAIN_FILE) -> dict:
         """
         Obtem o último bloco
         """
@@ -249,7 +249,7 @@ def is_chain_valid(chain: list, difficulty: int = 4) -> bool:
 def propagate_new_blockchain(chain,
                             nodes,
                             nodes_updated: list = settings.LIST_NODE_VALID,
-                            my_node: str = settings.MY_NODE):
+                            my_node: str = settings.NODES_FILE):
     for node in nodes:
         if not check_node(node) or node == my_node:
             continue
@@ -317,7 +317,7 @@ def update_blockchain() -> bool:
     if longest_chain:
         chain = longest_chain
         save_blockchain(blockchain=chain,
-            block_file_path=settings.BLOCK_FILENAME)
+            block_file_path=settings.BLOCKCHAIN_FILE)
         print('A cadeia foi substituída pela mais longa disponível.')
         return True
 
@@ -353,14 +353,14 @@ async def start_block_mining():
             'proof': proof,
             'hash': calculate_hash(previous_block),
             'previous_hash': previous_block['hash'],
-            'transactions': Transaction.load_transactions(settings.TRANSACTION_FILENAME),
+            'transactions': Transaction.load_transactions(settings.TRANSACTIONS_FILE),
         }
-        Transaction.clear_transactions(settings.TRANSACTION_FILENAME)
+        Transaction.clear_transactions(settings.TRANSACTIONS_FILE)
 
-        print(f'O node {settings.MY_NODE} conseguiu minerar um bloco!!!')
+        print(f'O node {settings.NODES_FILE} conseguiu minerar um bloco!!!')
         chain.append(block)
 
-        save_blockchain(block_file_path=settings.BLOCK_FILENAME,
+        save_blockchain(block_file_path=settings.BLOCKCHAIN_FILE,
                         blockchain=chain)
 
         # Se comunica com os demais nós dá rede
@@ -401,10 +401,10 @@ def check_progagate_blockchain(new_blockchain,
     if longest_blockchain:
         chain = longest_blockchain
         save_blockchain(blockchain=chain,
-                        block_file_path=settings.BLOCK_FILENAME)
+                        block_file_path=settings.BLOCKCHAIN_FILE)
 
-        if settings.MY_NODE not in nodes_updated:
-            nodes_updated.append(settings.MY_NODE)
+        if settings.NODES_FILE not in nodes_updated:
+            nodes_updated.append(settings.NODES_FILE)
 
         # Continua a propagação
         nodes = load_nodes()

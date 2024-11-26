@@ -3,7 +3,7 @@ from http import HTTPStatus
 
 import pytest
 
-from pycoin.settings import Settings
+from pycoin.settings.settings import Settings
 from pycoin.transaction import Transaction
 
 settings = Settings()
@@ -89,7 +89,7 @@ def test_save_transaction():
     Testa todas as possibilidades de manuseio de dados das transações
     """
 
-    test_transactions_file_path = settings.TEST_TRANSACTION_FILENAME
+    test_transactions_file_path = settings.TEST_TRANSACTIONS_FILE
 
     test_transaction_data = [{
             "address_sender": "pum7mQtJqClnNuMIPxCwZSWJkE4=",

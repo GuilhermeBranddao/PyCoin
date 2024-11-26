@@ -10,7 +10,7 @@ from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives.asymmetric.ec import EllipticCurvePrivateKey
 
 from pycoin.exceptions.transaction_exceptions import TransactionError
-from pycoin.settings import Settings
+from pycoin.settings.settings import Settings
 from pycoin.wallet import Wallet
 
 settings = Settings()
@@ -30,7 +30,7 @@ class Transaction:
         :param amount: O valor a ser transferido.
         """
 
-        self.transactions_file_path = settings.TRANSACTION_FILENAME
+        self.transactions_file_path = settings.TRANSACTIONS_FILE
 
     def sign_transaction(self, public_key: str, private_key: str,
                          recipient_address: str, amount: float):
@@ -142,7 +142,7 @@ class Transaction:
         return True
 
     @staticmethod
-    def initialize_transaction_file(transaction_file_path: Path = settings.TRANSACTION_FILENAME) -> bool:
+    def initialize_transaction_file(transaction_file_path: Path = settings.TRANSACTIONS_FILE) -> bool:
         print("Inicializando transações")
         if not isinstance(transaction_file_path, Path):
             raise ValueError("O parâmetro transaction_file_path deve ser um objeto do tipo Path.")
@@ -164,7 +164,7 @@ class Transaction:
         return True
 
     @staticmethod
-    def load_transactions(transactions_file_path: Path = settings.TRANSACTION_FILENAME) -> list:
+    def load_transactions(transactions_file_path: Path = settings.TRANSACTIONS_FILE) -> list:
         """
         Carrega todas as transações do arquivo JSON, mantendo a estrutura básica.
         """
@@ -223,7 +223,7 @@ class Transaction:
         }]
 
         # Salva a transação diretamente
-        Transaction.save_transactions(transactions_file_path=settings.TRANSACTION_FILENAME,
+        Transaction.save_transactions(transactions_file_path=settings.TRANSACTIONS_FILE,
                                       transaction_data=transaction_data)
 
         return True

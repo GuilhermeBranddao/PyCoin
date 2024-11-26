@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Request
 
-from pycoin.blockchain.tool_blockchain import (
+from pycoin.blockchain.block_utils import (
     add_node,
     check_progagate_blockchain,
     is_chain_valid,
@@ -10,8 +10,8 @@ from pycoin.blockchain.tool_blockchain import (
     update_blockchain,
 )
 from pycoin.miner.miner_manager import MinerManager
-from pycoin.schemas import NodeListRequest
-from pycoin.settings import Settings
+from pycoin.schemas.schemas import NodeListRequest
+from pycoin.settings.settings import Settings
 
 # Instância do gerenciador
 miner_manager = MinerManager()
