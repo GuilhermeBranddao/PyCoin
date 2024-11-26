@@ -9,7 +9,7 @@ from pycoin.blockchain.block_utils import (
     proof_of_work,
     save_blockchain,
 )
-from pycoin.settings.settings import Settings
+from pycoin.settings.config import Settings
 from pycoin.transaction import Transaction
 
 transaction = Transaction()

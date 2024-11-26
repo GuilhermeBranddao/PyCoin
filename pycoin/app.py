@@ -4,7 +4,7 @@ from fastapi import FastAPI
 
 from pycoin.blockchain.blockchain_manager import BlockchainInitializer
 from pycoin.routers import miner, wallet
-from pycoin.settings.settings import Settings
+from pycoin.settings.config import Settings
 
 BlockchainInitializer()
 
@@ -31,6 +31,6 @@ def status():
             'qtd_coins_earned': 0}
     return response
 
-# host, port = settings.NODES_FILE.split(":")
+# host, port = settings.MY_NODE.split(":")
 # uvicorn.run("pycoin.app:app", host=host, port=int(port),
 #            reload=True)

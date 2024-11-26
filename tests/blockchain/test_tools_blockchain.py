@@ -1,10 +1,8 @@
-
-
 from pycoin.blockchain.block_utils import (
     create_genesis_block,
     get_previous_block,
 )
-from pycoin.settings.settings import Settings
+from pycoin.settings.config import Settings
 
 settings = Settings()
 

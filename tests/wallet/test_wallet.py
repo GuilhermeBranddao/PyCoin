@@ -3,7 +3,7 @@ from http import HTTPStatus
 
 import pytest
 
-from pycoin.settings.settings import Settings
+from pycoin.settings.config import Settings
 from pycoin.transaction import Transaction
 
 settings = Settings()

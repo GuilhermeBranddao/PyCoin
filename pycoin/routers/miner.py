@@ -11,7 +11,7 @@ from pycoin.blockchain.block_utils import (
 )
 from pycoin.miner.miner_manager import MinerManager
 from pycoin.schemas.schemas import NodeListRequest
-from pycoin.settings.settings import Settings
+from pycoin.settings.config import Settings
 
 # Instância do gerenciador
 miner_manager = MinerManager()

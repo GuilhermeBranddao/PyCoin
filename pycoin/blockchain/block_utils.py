@@ -9,7 +9,7 @@ from urllib.parse import urlparse
 
 import requests
 
-from pycoin.settings.settings import Settings
+from pycoin.settings.config import Settings
 from pycoin.transaction import Transaction
 
 settings = Settings()
@@ -58,42 +58,6 @@ def save_blockchain(block_file_path: Path, blockchain) -> bool:
     return True
 
 
-def initialize_blockchain_file(block_file_path: Path = settings.BLOCKCHAIN_FILE) -> bool:
-    print("Inicializando blockchain")
-
-    if not isinstance(block_file_path, Path):
-        raise ValueError("O parâmetro block_file_path deve ser um objeto do tipo Path.")
-
-    is_block_exists = block_file_path.exists()
-
-    block_file_path.parent.mkdir(parents=True, exist_ok=True)
-    block_file_path.touch()
-
-    if not is_block_exists:
-        print("Gerando bloco genesis")
-        blockchain = create_genesis_block()
-        save_blockchain(block_file_path=block_file_path,
-                        blockchain=blockchain)
-
-    update_blockchain()
-    return True
-
-
-def initialize_node_file(nodes_file_path: Path = settings.NODES_FILE) -> bool:
-    print("Inicializando nodes")
-    nodes_file_path.parent.mkdir(parents=True, exist_ok=True)
-    nodes_file_path.touch()
-
-    if not nodes_file_path.exists():
-        raise ValueError("Não foi possivel criar o arquivo de node: {nodes_file_path}.")
-
-    # Atualiza os nodes
-    save_nodes(nodes_file_path=nodes_file_path,
-               list_new_nodes=settings.LIST_NODE_VALID)
-
-    return True
-
-
 def load_nodes(nodes_file_path: Path = settings.NODES_FILE) -> list:
     """
     Carrega os nós de um arquivo JSON. Caso o arquivo não exista, retorna uma lista vazia.
@@ -136,7 +100,7 @@ def check_node(node: str) -> bool:
     """
     Verifica se um nó está acessível via HTTP.
     """
-    if node == settings.NODES_FILE:
+    if node == settings.MY_NODE:
         return False
 
     try:
@@ -159,7 +123,7 @@ def request_get(url: str):
     Realiza uma requisição GET e lida com possíveis erros.
     """
     try:
-        response = requests.get(url, timeout=5)
+        response = requests.get(url)
         response.raise_for_status()
         return response
     except requests.exceptions.RequestException:

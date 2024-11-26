@@ -3,7 +3,7 @@ from fastapi.testclient import TestClient
 
 from pycoin.app import app
 from pycoin.blockchain.blockchain_manager import BlockchainInitializer
-from pycoin.settings.settings import Settings
+from pycoin.settings.config import Settings
 
 settings = Settings()
 BlockchainInitializer(

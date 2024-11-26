@@ -10,7 +10,7 @@ from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives.asymmetric.ec import EllipticCurvePrivateKey
 
 from pycoin.exceptions.transaction_exceptions import TransactionError
-from pycoin.settings.settings import Settings
+from pycoin.settings.config import Settings
 from pycoin.wallet import Wallet
 
 settings = Settings()
@@ -138,28 +138,6 @@ class Transaction:
         # Salva as transações atualizadas de volta ao arquivo
         with open(transactions_file_path, 'w', encoding='utf-8') as file:
             json.dump(transactions, file, indent=4)
-
-        return True
-
-    @staticmethod
-    def initialize_transaction_file(transaction_file_path: Path = settings.TRANSACTIONS_FILE) -> bool:
-        print("Inicializando transações")
-        if not isinstance(transaction_file_path, Path):
-            raise ValueError("O parâmetro transaction_file_path deve ser um objeto do tipo Path.")
-
-        is_file_exists = transaction_file_path.exists()
-
-        transaction_file_path.parent.mkdir(parents=True, exist_ok=True)
-        transaction_file_path.touch()
-
-        if not is_file_exists:
-            # Inicializa a estrutura de dados para armazenar transações
-            transactions = {"transactions": []}
-            with open(transaction_file_path, 'w', encoding='utf-8') as file:
-                json.dump(transactions, file, indent=4)
-
-        transaction_file_path.parent.mkdir(parents=True, exist_ok=True)
-        transaction_file_path.touch()
 
         return True
 

@@ -2,7 +2,7 @@ from fastapi import APIRouter
 
 from pycoin.blockchain.block_utils import load_chain
 from pycoin.schemas.schemas import AddTransaction, BalanceRequest
-from pycoin.settings.settings import Settings
+from pycoin.settings.config import Settings
 from pycoin.transaction import Transaction
 from pycoin.wallet import Wallet
 
