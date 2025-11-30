@@ -67,6 +67,9 @@ def initialize_node_file(nodes_file_path: Path = settings.NODES_FILE) -> bool:
     def init_nodes(file_path: Path):
         save_nodes(nodes_file_path=file_path, list_new_nodes=settings.LIST_NODE_VALID)
 
+    # Garante que o diretório existe
+    nodes_file_path.parent.mkdir(parents=True, exist_ok=True)
+
     return initialize_file(file_path=nodes_file_path, init_callback=init_nodes)
 
 

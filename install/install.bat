@@ -6,17 +6,19 @@
 python3.12 --version
 
 :: Criar e ativar o ambiente virtual
-python3.12 -m venv venv
-call venv\Scripts\activate
+python3.12 -m venv .venv
+call .venv\Scripts\activate
 
 :: Atualizar pip e instalar dependências
-python3.12 -m pip install --upgrade pip
-pip install pipx
-pipx ensurepath
+python -m pip install --upgrade pip
+::pip install pipx
+::pipx ensurepath
 
-pipx install poetry
-pip install -r requirements.txt
-poetry install
+poetry env activate
+pip install poetry
+::pip install -r requirements.txt
+
+:: poetry install
 
 :: Inicia o pre-commit
 pre-commit install

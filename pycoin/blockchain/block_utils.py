@@ -102,7 +102,7 @@ def check_node(node: str) -> bool:
     """
     if node == settings.MY_NODE:
         return False
-
+    return False
     try:
         response = request_get(f'http://{node}/ping')
         if not response:
@@ -138,17 +138,17 @@ def get_previous_block(block_file_path: str = settings.BLOCKCHAIN_FILE) -> dict:
         return blockchain[-1]
 
 
-async def proof_of_work(previous_proof: int, difficulty: int = 4, is_sleep=True) -> int:
+async def proof_of_work(previous_block: dict, difficulty: int = 4, is_sleep=True) -> int:
     """
     Gera a prova de trabalho com base na dificuldade fornecida de forma assíncrona.
 
-    :param previous_proof: A prova do bloco anterior.
+    :param previous_block: A prova do bloco anterior.
     :param difficulty: Número de zeros iniciais necessários no hash.
     :param is_sleep: Se deve simular uma pausa durante a mineração.
     :return: O novo proof.
     """
-    target = '0' * difficulty  # Define a meta baseada na dificuldade
-    new_proof = 1
+    new_proof = 0
+    prefix = '0' * difficulty  # Define a meta baseada na dificuldade
 
     if is_sleep:
         # Substituímos o sleep bloqueante por await asyncio.sleep
@@ -158,25 +158,33 @@ async def proof_of_work(previous_proof: int, difficulty: int = 4, is_sleep=True)
 
     while True:
         # Realiza o cálculo do hash
-        hash_operation = hashlib.sha256(
-            f"{new_proof**2 - previous_proof**2}".encode()
-        ).hexdigest()
+        block_candidate = {
+            "index": previous_block["index"] + 1,
+            "timestamp": str(datetime.datetime.now()),
+            "proof": new_proof,
+            "previous_hash": previous_block["hash"],
+            "transactions": []  # transações serão adicionadas depois
+        }
 
-        # Verifica se o hash corresponde ao alvo
-        if hash_operation[:difficulty] == target:
-            return new_proof
+        hash_value = calculate_hash(block_candidate)
+
+        if hash_value.startswith(prefix):
+            block_candidate["hash"] = hash_value
+            return block_candidate
 
         new_proof += 1
 
 
 def calculate_hash(block: dict) -> str:
     """
-    Calcula o hash de um bloco.
+    Calcula o hash SHA-256 de um bloco (sem o campo hash).
 
     :param block: Dicionário contendo os dados do bloco.
     :return: Hash SHA-256 do bloco.
     """
-    block_string = str(block).encode()
+    block_copy = block.copy()
+    block_copy.pop("hash", None)
+    block_string = json.dumps(block_copy, sort_keys=True).encode()
     return hashlib.sha256(block_string).hexdigest()
 
 
@@ -184,29 +192,55 @@ def is_chain_valid(chain: list, difficulty: int = 4) -> bool:
     """
     Verifica a validade de uma blockchain.
 
+    Para validar de forma automática, precisamos checar três coisas principais:
+    - Integridade dos hashes: o hash armazenado deve bater com o cálculo real do bloco.
+    - Encadeamento: previous_hash de cada bloco deve ser igual ao hash do bloco anterior.
+    - Proof of Work: o valor de proof deve satisfazer a regra definida (ex.: hash começando com 0000).
+    - Timestamp coerente
+
     :param chain: Lista de blocos representando a blockchain.
     :param difficulty: Dificuldade esperada para a prova de trabalho.
     :return: True se a blockchain for válida, False caso contrário.
     """
+
+    if not chain or len(chain) == 0:
+        logger.error("Blockchain vazia")
+        return False
+
+    prefix = "0" * difficulty
+
     for index in range(1, len(chain)):
-        previous_block = chain[index - 1]
         current_block = chain[index]
+        previous_block = chain[index - 1]
 
-        # Verifica o hash do bloco anterior
-        if current_block['hash'] != calculate_hash(previous_block):
-            print("Hash da blockchain invalido!!!")
+        # 1. Verifica integridade do hash
+        recalculated_hash = calculate_hash(current_block)
+        if current_block.get("hash") != recalculated_hash:
+            logger.error(f"❌ Hash inválido no bloco {current_block.get('index')}")
             return False
 
-        # Verifica a prova de trabalho do bloco atual
-        previous_proof = previous_block['proof']
-        current_proof = current_block['proof']
-        hash_operation = hashlib.sha256(
-            f"{current_proof**2 - previous_proof**2}".encode()
-        ).hexdigest()
-        if hash_operation[:difficulty] != '0' * difficulty:
-            print("Prova de trabalho invalida invalido!!!")
+        # 2. Verifica encadeamento
+        if current_block.get("previous_hash") != previous_block.get("hash"):
+            logger.error(f"❌ Encadeamento inválido no bloco {current_block.get('index')}")
             return False
 
+        # 3. Verifica Proof of Work
+        if not current_block["hash"].startswith(prefix):
+            logger.error(f"⚠️ Prova de trabalho inválida no bloco {current_block.get('index')}")
+            return False
+
+        # 4. Verifica timestamp coerente
+        try:
+            current_time = datetime.datetime.fromisoformat(current_block["timestamp"])
+            previous_time = datetime.datetime.fromisoformat(previous_block["timestamp"])
+            if current_time < previous_time:
+                logger.error(f"⏱️ Timestamp inválido no bloco {current_block.get('index')}")
+                return False
+        except Exception as e:
+            logger.error(f"Erro ao validar timestamp: {e}")
+            return False
+
+    logger.info("✅ Blockchain válida")
     return True
 
 
@@ -289,58 +323,86 @@ def update_blockchain(block_file_path: Path = settings.BLOCKCHAIN_FILE) -> bool:
     return False
 
 
-async def start_block_mining(block_file_path: Path = settings.BLOCKCHAIN_FILE,
-                             transactions_file_path: Path = settings.TRANSACTIONS_FILE):
-    # FIXME: Essa função faz muitas coisas, ele realiza a mineração e reuni outras coisas
-    # TODO: Validação dos blocos existentes
-    # TODO: Verifica se não há blocos já minerados
+import logging
+from pathlib import Path
+
+logger = logging.getLogger(__name__)
+
+
+async def start_block_mining(
+    block_file_path: Path = settings.BLOCKCHAIN_FILE,
+    transactions_file_path: Path = settings.TRANSACTIONS_FILE
+) -> dict | None:
+    """
+    Inicia o processo de mineração de um novo bloco.
+    Responsabilidades:
+    - Recuperar o último bloco
+    - Executar prova de trabalho
+    - Validar a cadeia existente
+    - Criar e salvar novo bloco
+    - Propagar atualização para os nós da rede
+    """
 
     try:
-        previous_block = get_previous_block(block_file_path=block_file_path)
+        previous_block = get_previous_block(block_file_path)
+        new_block = await proof_of_work(previous_block)
 
-        proof = await proof_of_work(previous_proof=previous_block['proof'])
+        chain = load_chain(block_file_path)
+        chain.append(new_block)
 
-        chain = load_chain(block_file_path=block_file_path)
-
-        is_valid = is_chain_valid(chain)
-        if not is_valid:
-            # Se o bloco não for valido deve-se atualizar o bloco
+        if not is_chain_valid(chain):
+            logger.warning("Blockchain inválida. Atualizando...")
             update_blockchain()
-            return False
+            return None
 
+        # Adiciona recompensa ao minerador
         Transaction.add_transaction_miner_reward(
             miner_address=settings.MINER_PUBLIC_ADDRESS,
-            reward_amount=settings.MINING_REWARD)
-
-        block = {
-            'index': len(chain),
-            'timestamp': str(datetime.datetime.now()),
-            'proof': proof,
-            'hash': calculate_hash(previous_block),
-            'previous_hash': previous_block['hash'],
-            'transactions': Transaction.load_transactions(transactions_file_path=transactions_file_path),
-        }
-        Transaction.clear_transactions(transactions_file_path=transactions_file_path)
-
-        print(f'O node {settings.NODES_FILE} conseguiu minerar um bloco!!!')
-        chain.append(block)
-
-        save_blockchain(block_file_path=block_file_path,
-                        blockchain=chain)
-
-        # Se comunica com os demais nós dá rede
-        nodes = load_nodes()
-        propagate_new_blockchain(
-            chain=chain,
-            nodes=nodes,
+            reward_amount=settings.MINING_REWARD
         )
 
-        print(">>>>>>Estou aqui agora<<<<<<")
-        # Retorna o bloco minerado
-        return {"new_block": "new_block"}
+        # Cria novo bloco
+        # block = create_new_block(
+        #     chain=chain,
+        #     previous_block=previous_block,
+        #     proof=proof,
+        #     transactions_file_path=transactions_file_path
+        # )
+
+        # Persiste e propaga
+        save_blockchain(block_file_path, chain)
+        propagate_to_network(chain)
+
+        logger.info(f"Nó {settings.NODES_FILE} minerou um novo bloco #{new_block['index']}")
+        return {"new_block": new_block}
+
     except Exception as e:
-        print(f"Erro ao minerar o bloco: {e}")
+        logger.error(f"Erro ao minerar o bloco: {e}", exc_info=True)
         return None
+
+
+def create_new_block(chain: list, previous_block: dict, proof: int, transactions_file_path: Path) -> dict:
+    """Cria um novo bloco e adiciona à cadeia."""
+    block = {
+        "index": len(chain),
+        "timestamp": datetime.datetime.now().isoformat(),
+        "proof": proof,
+        "previous_hash": previous_block["hash"],
+        "transactions": Transaction.load_transactions(transactions_file_path),
+    }
+    block["hash"] = calculate_hash(block)
+
+    # Limpa transações pendentes
+    Transaction.clear_transactions(transactions_file_path)
+
+    chain.append(block)
+    return block
+
+
+def propagate_to_network(chain: list) -> None:
+    """Propaga a blockchain atualizada para os nós da rede."""
+    nodes = load_nodes()
+    propagate_new_blockchain(chain=chain, nodes=nodes)
 
 
 def check_progagate_blockchain(new_blockchain,

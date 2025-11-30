@@ -1,7 +1,0 @@
-pandas
-numpy
-ipykernel
-flask
-uuid
-requests
-cryptography

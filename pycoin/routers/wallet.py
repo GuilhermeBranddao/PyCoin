@@ -42,7 +42,7 @@ def balance_and_transactions(request: BalanceRequest):
     transaction = Transaction()
 
     address_transaction = transaction.check_wallet_balance(
-        blockchain=load_chain(block_file_path=settings.BLOCKCHAIN_FILE),
+        chain=load_chain(block_file_path=settings.BLOCKCHAIN_FILE),
         wallet_address=request.address)
 
     return address_transaction

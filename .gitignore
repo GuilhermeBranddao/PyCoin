@@ -9,6 +9,7 @@ __pycache__/
 # my jupyters notebooks
 notebooks/
 *.ipynb
+*.json
 
 # 
 pycoin/data/
