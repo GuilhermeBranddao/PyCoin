@@ -1,0 +1,75 @@
+# Blockchain
+A blockchain(infraestrutura/protocolo). Ela define:
+- Regras de mineração (PoW, dificuldade, recompensa, estrutura de bloco)
+- Como blocos são criados
+- Como transações são registradas
+- Como os nós se comunicam
+- Como o consenso funciona
+- Como chaves, endereços e assinaturas são validados
+
+Sem isso, não existe onde registrar, validar ou mover a criptomoeda.
+
+
+# Mineração
+Mineração pertence a blockchain e é o processo de:
+1. Validar transações pendentes
+2. Organizar essas transações em um bloco
+3. Resolver um problema matemático (Prova de Trabalho → PoW)
+4. Anexar o novo bloco à blockchain
+5. Receber uma recompensa (a criptomoeda)
+
+A mineração é o mecanismo que mantém a blockchain funcionando e segura.
+Ela impede:
+- gasto duplo
+- falsificação de blocos
+- ataques (porque alterar bloco exige refazer toda a PoW)
+
+
+# Criptomoeda
+A criptomoeda (aplicação que roda sobre a blockchain)
+
+A moeda é apenas um tipo de transação nessa infraestrutura.
+
+A criptomoeda depende da blockchain para:
+- Existe porque a mineração entrega as moedas (recompensa do bloco)
+- Registrar transações de envio e recebimento
+- Garantir imutabilidade
+- Tornar o saldo verificável
+- Impedir gasto duplo (double-spend)
+- Distribuir recompensas (mineração, staking etc.)
+
+# Minerador 
+É a pessoa/máquina que executa o processo (software de mineração)
+
+Funções:
+- precisa de um nó completo
+- executa PoW continuamente
+- mantém a rede segura
+- ganha moeda através do bloco minerado
+
+O minerador precisa de:
+- um nó completo da blockchain
+    - Ex: Bitcoin Core (nó completo)
+- um minerador (software) que executa o PoW
+    - Ex: Um software de mineração (cgminer, bfgminer, etc.)
+- acesso ao hardware (CPU, GPU, ASIC dependendo do algoritmo)
+    - Ex: Às vezes junta-se a um pool
+
+# Usuários comuns
+Funções
+- tem carteira
+- faz transações
+- consulta saldo
+- não minera 
+- não precisa da blockchain inteira
+
+
+- Compram moedas que foram mineradas por mineradores
+- Usam a moeda, mas não mineram
+
+
+---
+
+
+uma arquitetura profissional para mineração
+https://chatgpt.com/c/692c6413-f6b8-8327-84d6-19e01dccd37c

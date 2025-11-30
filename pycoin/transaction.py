@@ -129,6 +129,13 @@ class Transaction:
         if not isinstance(transactions_file_path, Path):
             raise ValueError("O parâmetro transactions_file_path deve ser um objeto do tipo Path.")
 
+        # TODO: Antes de minerar, valide transação por transação (Transaction.load_transactions).
+            # - assinatura
+            # - saldo
+            # - formato
+            # - duplicidade
+        # Da maneira que está Um nó malicioso pode simplesmente alterar o JSON e roubar moedas.
+
         existing_transaction = Transaction.load_transactions(transactions_file_path)
         new_transaction = transaction_data + existing_transaction
 
@@ -217,6 +224,9 @@ class Transaction:
         address_sender = Wallet.generate_address(public_key)
         wallet_balance = Transaction.check_wallet_balance(chain, wallet_address=address_sender)
 
+        if address_sender == recipient_address:
+            raise TransactionError('O remetente e o destinatário não podem ser iguais.',
+            status_code=422)
         if amount <= 0:
             raise TransactionError('Não é possivel realizar ransações negativas.',
             status_code=422)

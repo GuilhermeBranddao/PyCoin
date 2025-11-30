@@ -1,3 +1,76 @@
 {
-    "transactions": []
+    "transactions": [
+        {
+            "address_sender": "MINING_REWARD",
+            "recipient_address": "9yVVKNe6vYDUnDgRBMFjOFidMjU=",
+            "amount": 100.0,
+            "timestamp": "2025-11-30 16:44:08.408199"
+        },
+        {
+            "address_sender": "MINING_REWARD",
+            "recipient_address": "9yVVKNe6vYDUnDgRBMFjOFidMjU=",
+            "amount": 100.0,
+            "timestamp": "2025-11-30 16:44:00.628360"
+        },
+        {
+            "address_sender": "9yVVKNe6vYDUnDgRBMFjOFidMjU=",
+            "recipient_address": "deGxZ6g3PAhtJIwhXRAkisJIX3Q=",
+            "amount": 10.0,
+            "timestamp": "2025-11-30 16:42:40.170365"
+        },
+        {
+            "address_sender": "9yVVKNe6vYDUnDgRBMFjOFidMjU=",
+            "recipient_address": "I56DKE7MbvX7ik5kU7ckcLLwfoc=",
+            "amount": 10.0,
+            "timestamp": "2025-11-30 16:42:39.600574"
+        },
+        {
+            "address_sender": "9yVVKNe6vYDUnDgRBMFjOFidMjU=",
+            "recipient_address": "YqMMDuzsTIE5JVyW_PvlzLNALtY=",
+            "amount": 10.0,
+            "timestamp": "2025-11-30 16:42:39.055343"
+        },
+        {
+            "address_sender": "9yVVKNe6vYDUnDgRBMFjOFidMjU=",
+            "recipient_address": "44SjfVcOwCFg6VBSoYyZ9-GrIrY=",
+            "amount": 10.0,
+            "timestamp": "2025-11-30 16:42:38.480472"
+        },
+        {
+            "address_sender": "9yVVKNe6vYDUnDgRBMFjOFidMjU=",
+            "recipient_address": "2hZQB_rD39oup_vq8Seg642ugf8=",
+            "amount": 10.0,
+            "timestamp": "2025-11-30 16:42:37.959376"
+        },
+        {
+            "address_sender": "9yVVKNe6vYDUnDgRBMFjOFidMjU=",
+            "recipient_address": "EGWa8KvYbvNgSpKoDE9bRAcYv3A=",
+            "amount": 10.0,
+            "timestamp": "2025-11-30 16:42:37.380837"
+        },
+        {
+            "address_sender": "9yVVKNe6vYDUnDgRBMFjOFidMjU=",
+            "recipient_address": "6xCxkhE7Bgv2Iua4bzIAm9A9EYg=",
+            "amount": 10.0,
+            "timestamp": "2025-11-30 16:42:08.925274"
+        },
+        {
+            "address_sender": "MINING_REWARD",
+            "recipient_address": "9yVVKNe6vYDUnDgRBMFjOFidMjU=",
+            "amount": 100.0,
+            "timestamp": "2025-11-30 16:41:12.702273"
+        },
+        {
+            "address_sender": "MINING_REWARD",
+            "recipient_address": "9yVVKNe6vYDUnDgRBMFjOFidMjU=",
+            "amount": 100.0,
+            "timestamp": "2025-11-30 16:41:03.425519"
+        },
+        {
+            "address_sender": "MINING_REWARD",
+            "recipient_address": "9yVVKNe6vYDUnDgRBMFjOFidMjU=",
+            "amount": 100.0,
+            "timestamp": "2025-11-30 16:40:50.796122"
+        }
+    ]
 }

@@ -116,6 +116,11 @@ class Wallet:
             private_key = serialization.load_pem_private_key(
                 pem_formatted_key.encode('utf-8'), password=None
             )
+
+            # TODO: Implementar "TransactionError"
+            # if private_key is None:
+            #     raise TransactionError("Chave privada inválida")
+
             return private_key
         except Exception as e:
             print(f'Erro ao carregar chave privada: {e}')

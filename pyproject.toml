@@ -44,9 +44,14 @@ lint = 'ruff check .; ruff check . --diff'
 fix = 'ruff check . --fix && ruff format .'
 run = 'fastapi dev pycoin/app.py'
 pre_test = 'task lint'
-test = 'pytest -s -x --cov=pycoin -vv'
 post_test = 'coverage html'
 
+# Rodar todos os testes
+test = 'pytest -s -x --cov=pycoin -vv'
+# Rodar uma função específica (task test_function test_add_transaction_success)
+test_function = "pytest -s -x --cov=pycoin -vv -k"
+# Rodar um arquivo específico (task test_file tests/wallet/test_wallet.py)
+test_file = "pytest -s -x --cov=pycoin -vv"
 
 
 

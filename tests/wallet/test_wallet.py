@@ -43,9 +43,9 @@ def test_add_transaction_success(client):
     response = client.post("wallet/add_transaction",
                           json=data)
 
-    # FIXME: Essa transação não deveria ocorrer com sucesso
-    assert True  # response.status_code == HTTPStatus.OK
-    assert True  # response.json().get("message") == "Nova transação adicionada"
+    # FIXME: Adicionar fundos na carteira A
+    assert response.status_code == HTTPStatus.OK
+    assert response.json().get("message") == "Nova transação adicionada"
 
 
 def test_add_transaction_without_balance(client):
