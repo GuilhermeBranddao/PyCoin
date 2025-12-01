@@ -73,3 +73,12 @@ Funções
 
 uma arquitetura profissional para mineração
 https://chatgpt.com/c/692c6413-f6b8-8327-84d6-19e01dccd37c
+
+
+# Testes
+
+## Transações
+- Cada nó verifica se a transação é legítima:
+    - Assinatura digital confere?
+    - O endereço tem saldo suficiente?
+    - Não há gasto duplo?

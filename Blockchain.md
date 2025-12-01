@@ -494,3 +494,6 @@ Perfeito, Guilherme! Vou começar a pesquisar um guia completo para você aprend
 - Como aplicar esse conhecimento na criação da sua própria criptomoeda
 
 ⏳ Isso vai levar alguns minutos, então fique à vontade para fazer outra coisa enquanto eu trabalho nisso. Seu relatório será salvo aqui nesta conversa!
+
+
+---
