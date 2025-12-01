@@ -10,8 +10,7 @@ from core.blockchain import DifficultyEngine
 from node.services.mempool_service import MempoolService
 from node.storage.chain_repository import ChainRepository
 
-# Dependências (idealmente viriam de node/dependencies.py)
-from node.app import get_mempool, get_chain_repo
+from node.dependencies import get_mempool, get_chain_repo
 
 router = APIRouter(prefix="/mining", tags=["Mining"])
 
@@ -63,7 +62,8 @@ def get_work(
     
     # 3. Construir Candidato
     # TODO: Calcular 'bits' real usando DifficultyEngine
-    bits = last_block.header.bits 
+    last_block = Block.from_dict(last_block)
+    bits = last_block.header.bits
     
     candidate = Block.create_candidate(
         transactions=transactions,
