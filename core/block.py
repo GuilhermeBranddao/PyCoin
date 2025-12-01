@@ -121,6 +121,29 @@ class Block:
         # 3. Retorna o objeto Bloco (ainda inválido pois não tem PoW feito)
         return cls(header=header, transactions=transactions, height=block_height)
 
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "Block":
+        header_data = data["header"]
+
+        header = BlockHeader(
+            version=header_data["version"],
+            prev_block_hash=header_data["prev_block_hash"],
+            merkle_root=header_data["merkle_root"],
+            timestamp=header_data["timestamp"],
+            bits=header_data["bits"],
+            nonce=header_data["nonce"]
+        )
+
+        transactions = [
+            Transaction.from_dict(tx) for tx in data["transactions"]
+        ]
+
+        return cls(
+            header=header,
+            transactions=transactions,
+            height=data.get("height", 0)
+        )
+
     @staticmethod
     def create_genesis_block() -> 'Block':
         """Cria o bloco Gênesis hardcoded."""
