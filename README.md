@@ -18,9 +18,13 @@ Clone o repositório do projeto para sua máquina local:
 Escolha o método de instalação conforme o sistema operacional:
 
 #### Para Linux:
+
+Dê permissão de execução: 
+`chmod +x install/install_v1.1.sh`
+
 Execute o script de instalação:
 
-`. install/install.sh`
+`. install/install_v1.1.sh`
 
 #### Para Windows:
 1. Baixe e instale o [Python 3.12](https://www.python.org/downloads/release/python-3120/).
