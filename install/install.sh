@@ -23,7 +23,7 @@ pipx ensurepath
 pipx install poetry
 
 poetry install
-pip install -r requirements.txt
+# pip install -r requirements.txt
 
 # Inicia o pre-commit
 pre-commit install

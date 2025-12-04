@@ -2,19 +2,20 @@
 import json
 import os
 import struct
-from typing import Optional, Dict, List
-import plyvel # LevelDB wrapper
+from typing import List, Optional
+
+import plyvel  # LevelDB wrapper
 
 from core.block import Block, BlockHeader
-from core.transaction import Transaction, TxOutput
-from core.utxo import UTXO # Supondo que você criou essa classe simples no core
+from core.transaction import Transaction
+
 
 class ChainRepository:
-    def __init__(self, db_path: str = "./data/chainstate", 
+    def __init__(self, db_path: str = "./data/chainstate",
                  blocks_path: str = "./data/blocks"):
         self.blocks_dir = blocks_path
         self.current_block_file = "blk00000.dat"
-        
+
         # Cria diretórios se não existirem
         os.makedirs(db_path, exist_ok=True)
         os.makedirs(blocks_path, exist_ok=True)
@@ -40,10 +41,10 @@ class ChainRepository:
 
         # 1. Append no arquivo flat
         file_path = os.path.join(self.blocks_dir, self.current_block_file)
-        
+
         with open(file_path, "ab") as f:
-            offset = f.tell() # Pega a posição atual antes de escrever
-            f.write(struct.pack("<I", len(block_data))) # Header de tamanho (4 bytes)
+            offset = f.tell()  # Pega a posição atual antes de escrever
+            f.write(struct.pack("<I", len(block_data)))  # Header de tamanho (4 bytes)
             f.write(block_data)
             length = len(block_data)
 
@@ -72,15 +73,27 @@ class ChainRepository:
         length = int(length)
 
         file_path = os.path.join(self.blocks_dir, file_name)
-        
+
         with open(file_path, "rb") as f:
-            f.seek(offset + 4) # Pula os 4 bytes de tamanho
+            f.seek(offset + 4)  # Pula os 4 bytes de tamanho
             block_data = f.read(length)
-            
-        # Reconstrói objeto Block (simplificado aqui, precisa de parsing reverso)
-        # Idealmente você teria Block.from_dict()
+
         block_dict = json.loads(block_data)
-        return block_dict # Retornar objeto Block instanciado na prática
+
+        # 1. Reconstrói as Transações
+        tx_objects = []
+        for tx_data in block_dict['transactions']:
+            tx_objects.append(Transaction.from_dict(tx_data))
+
+        # 2. Reconstrói o Header
+        header_obj = BlockHeader(**block_dict['header'])
+
+        # 3. Retorna o Objeto Block completo
+        return Block(
+            header=header_obj,
+            transactions=tx_objects,
+            height=block_dict['height']
+        )
 
     def get_last_block_hash(self) -> Optional[str]:
         val = self.db.get(b'H-last_block')
@@ -95,11 +108,11 @@ class ChainRepository:
         """
         # 1. Gastar Inputs (Remover do DB)
         for tx in block.transactions:
-            if not tx.inputs: continue # Coinbase pode não ter inputs normais
-            
+            if not tx.inputs: continue  # Coinbase pode não ter inputs normais
+
             for inp in tx.inputs:
-                if inp.prev_tx_id == "00000000": continue # Ignora input de coinbase
-                
+                if inp.prev_tx_id == "00000000": continue  # Ignora input de coinbase
+
                 # Remove UTXO: Key u-{txid}-{index}
                 utxo_key = f"u-{inp.prev_tx_id}-{inp.output_index}".encode()
                 batch.delete(utxo_key)
@@ -108,14 +121,14 @@ class ChainRepository:
         for tx in block.transactions:
             for idx, output in enumerate(tx.outputs):
                 utxo_key = f"u-{tx.id}-{idx}".encode()
-                
+
                 # Value: Serializa o UTXO (Amount, Address/Script)
                 # Otimização: Salvar binário com struct
                 utxo_val = json.dumps({
                     "amount": output.amount,
                     "address": output.address
                 }).encode()
-                
+
                 batch.put(utxo_key, utxo_val)
 
     def get_utxo(self, tx_id: str, index: int) -> Optional[dict]:
@@ -125,3 +138,28 @@ class ChainRepository:
         if not data:
             return None
         return json.loads(data)
+
+    def get_utxos_by_address(self, address: str) -> List[dict]:
+        """
+        Itera sobre todos os UTXOs ativos e filtra pelo endereço.
+        Retorna lista de {tx_id, output_index, amount}.
+        """
+
+        # TODO: Em produção, teríamos um índice secundário (tabela de endereços). Para agora, faremos um scan nos UTXOs, que é aceitável para MVP.
+        utxos = []
+        # Itera apenas sobre chaves que começam com 'u-'
+        for key, value in self.db.iterator(prefix=b'u-'):
+            data = json.loads(value)
+            if data['address'] == address:
+                # A chave é b'u-{txid}-{index}'
+                # Decodificamos para pegar os IDs
+                parts = key.decode().split('-')
+                tx_id = parts[1]
+                output_index = int(parts[2])
+
+                utxos.append({
+                    "tx_id": tx_id,
+                    "output_index": output_index,
+                    "amount": data['amount']
+                })
+        return utxos

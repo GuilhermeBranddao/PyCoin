@@ -1,7 +1,9 @@
 # node/services/mempool_service.py
-from typing import List, Dict, Set
+from typing import Dict, List, Set
+
 from core.transaction import Transaction
 from node.storage.chain_repository import ChainRepository
+
 
 class MempoolService:
     def __init__(self, chain_repository: ChainRepository):
@@ -19,7 +21,7 @@ class MempoolService:
         """
         # 1. Já conhecemos essa TX?
         if tx.id in self._pending_txs:
-            return True # Já está lá, ignorar
+            return True  # Já está lá, ignorar
 
         # 2. Validação Stateless (Assinaturas e Formato) - CORE
         if not tx.is_valid():
@@ -29,7 +31,7 @@ class MempoolService:
         # Precisamos verificar se os inputs referenciados:
         # a) Existem no UTXO set (são dinheiro real)
         # b) Não foram gastos por outra TX já na mempool
-        
+
         for inp in tx.inputs:
             # Check A: Existe no banco de dados?
             utxo = self.repository.get_utxo(inp.prev_tx_id, inp.output_index)
@@ -43,7 +45,7 @@ class MempoolService:
 
         # 4. Adiciona à Mempool
         self._pending_txs[tx.id] = tx
-        
+
         # Marca inputs como "temporariamente gastos"
         for inp in tx.inputs:
             input_key = f"{inp.prev_tx_id}:{inp.output_index}"
@@ -67,8 +69,8 @@ class MempoolService:
         for tx in txs:
             if tx.id in self._pending_txs:
                 del self._pending_txs[tx.id]
-                
-                # Libera o cache de inputs (embora agora estejam gastos na chain, 
+
+                # Libera o cache de inputs (embora agora estejam gastos na chain,
                 # removemos da cache da mempool para manter limpo)
                 for inp in tx.inputs:
                     input_key = f"{inp.prev_tx_id}:{inp.output_index}"

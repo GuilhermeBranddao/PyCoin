@@ -11,7 +11,8 @@ notebooks/
 *.ipynb
 
 *.json
-
+*.pem
+data/*
 # 
 pycoin/data/
 

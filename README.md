@@ -20,7 +20,7 @@ Escolha o método de instalação conforme o sistema operacional:
 #### Para Linux:
 Execute o script de instalação:
 
-`. install\install.sh`
+`. install/install.sh`
 
 #### Para Windows:
 1. Baixe e instale o [Python 3.12](https://www.python.org/downloads/release/python-3120/).
@@ -40,6 +40,32 @@ Execute o script de instalação:
 Se tudo deu certo, rode a aplicação com o seguinte comando:
 
 `task run`
+
+
+Criar (Gênesis)
+`python scripts/init_blockchain.py`
+
+Se você alterar a dificuldade ou outra coisas (TODO: liscar coisas) você deve gerar um novo bloco genesis
+`python scripts/init_blockchain.py --force`
+`python scripts/init_blockchain.py --port 8000 --force`
+
+Rodar API
+`uvicorn node.app:app --reload --port 8000`
+
+Rode a Wallet:
+`python wallet_client/simple_wallet.py`
+
+- Ela vai gerar um arquivo my_private_key.pem.
+- Ela vai mostrar seu Endereço no terminal. Copie esse endereço.
+
+#### Minerador
+Mude a variável MINER_ADDRESS para o endereço que a Wallet acabou de mostrar.
+
+Rode o Minerador
+`python miner_client/miner.py`
+
+- Agora você está minerando para a sua carteira real!
+
 
   
 Pronto, agora você está rodando uma verção do PyCoin localmente em sua maquina, para uma interface amigavel, acesse o [link](http://127.0.0.1:8000/docs) para ter acesso os endpoits e conseguir acesar as funcionalidades.

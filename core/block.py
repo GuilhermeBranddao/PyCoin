@@ -1,13 +1,14 @@
 # core/block.py
-import time
-import json
 import hashlib
 import struct
-from dataclasses import dataclass, field, asdict
-from typing import List, Dict, Any
+import time
+from dataclasses import asdict, dataclass
+from typing import Any, Dict, List
 
-from core.transaction import Transaction
+from config import GENESIS_BITS
 from core.merkle import MerkleTree
+from core.transaction import Transaction
+
 
 @dataclass
 class BlockHeader:
@@ -50,8 +51,9 @@ class BlockHeader:
         header_bin = self.serialize_for_mining()
         hash1 = hashlib.sha256(header_bin).digest()
         hash2 = hashlib.sha256(hash1).digest()
-        # Retorna em Hex (geralmente invertemos para Big-Endian ao exibir, mas manteremos simples)
-        return hash2.hex()
+        # Invertemos os bytes ([::-1]) antes de converter para Hex.
+        # Isso alinha o Node com a lógica de 'Big Endian' do Minerador.
+        return hash2[::-1].hex()
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -64,7 +66,7 @@ class Block:
     """
     header: BlockHeader
     transactions: List[Transaction]
-    
+
     # Propriedades auxiliares
     height: int = 0  # Altura do bloco na chain (não faz parte do hash, é metadado local)
 
@@ -90,9 +92,9 @@ class Block:
         }
 
     @classmethod
-    def create_candidate(cls, 
-                         transactions: List[Transaction], 
-                         prev_hash: str, 
+    def create_candidate(cls,
+                         transactions: List[Transaction],
+                         prev_hash: str,
                          block_height: int,
                          bits: int,
                          version: int = 1):
@@ -150,7 +152,7 @@ class Block:
         # Transação Gênesis (Hardcoded)
         # Em um sistema real, seria uma transação especial sem inputs
         genesis_tx_data = "The Times 03/Jan/2009 Chancellor on brink of second bailout for banks"
-        
+
         # Como não temos uma TX válida ainda, vamos simular o hash para o merkle
         merkle_root = hashlib.sha256(genesis_tx_data.encode()).hexdigest()
 
@@ -158,9 +160,9 @@ class Block:
             version=1,
             prev_block_hash="0" * 64,
             merkle_root=merkle_root,
-            timestamp=1700000000, # Data fixa
-            bits=0x1d00ffff,      # Dificuldade mínima
+            timestamp=1700000000,  # Data fixa
+            bits=GENESIS_BITS,    # Dificuldade mínima
             nonce=2083236         # Nonce que satisfaz a dificuldade acima (exemplo)
         )
-        
+
         return Block(header=header, transactions=[], height=0)

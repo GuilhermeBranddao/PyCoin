@@ -1,14 +1,16 @@
 import hashlib
 import json
 import time
-from dataclasses import dataclass, asdict, field
-from typing import List, Optional
+from dataclasses import asdict, dataclass, field
+from typing import List
+
+from cryptography.exceptions import InvalidSignature
 
 # Utilizaremos as mesmas libs de criptografia que você já estava usando
 from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.asymmetric import ec
-from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives import serialization as crypto_serialization
+from cryptography.hazmat.primitives.asymmetric import ec
+
 
 @dataclass
 class TxOutput:
@@ -22,6 +24,7 @@ class TxOutput:
     def to_dict(self):
         return asdict(self)
 
+
 @dataclass
 class TxInput:
     """
@@ -30,11 +33,12 @@ class TxInput:
     """
     prev_tx_id: str      # Hash da transação onde o dinheiro está
     output_index: int    # Qual índice da lista de outputs daquela transação
-    public_key: str = "" # Chave pública para validar a assinatura (Hex)
+    public_key: str = ""  # Chave pública para validar a assinatura (Hex)
     signature: str = ""  # A prova criptográfica (Hex)
 
     def to_dict(self):
         return asdict(self)
+
 
 @dataclass
 class Transaction:
@@ -55,6 +59,42 @@ class Transaction:
             "timestamp": self.timestamp
         }
 
+    @staticmethod
+    def from_dict(data: dict) -> "Transaction":
+        """
+        Reconstrói uma Transaction a partir de um dicionário.
+        """
+        # Reconstruir inputs
+        inputs = [
+            TxInput(
+                prev_tx_id=i["prev_tx_id"],
+                output_index=i["output_index"],
+                public_key=i["public_key"],
+                signature=i.get("signature"),
+                # pubkey=i.get("pubkey")
+            )
+            for i in data["inputs"]
+        ]
+
+        # Reconstruir outputs
+        outputs = [
+            TxOutput(
+                amount=o["amount"],
+                address=o["address"]
+            )
+            for o in data["outputs"]
+        ]
+
+        # Criar objeto Transaction SEM chamar __post_init__ automaticamente
+        tx = Transaction(inputs=inputs, outputs=outputs, timestamp=data["timestamp"])
+
+        # ⚠️ IMPORTANTE:
+        # Ao reconstruir a transação, o ID deve ser exatamente o armazenado.
+        # Então definimos manualmente:
+        tx.id = data.get("id", tx.calculate_hash())
+
+        return tx
+
     def calculate_hash(self) -> str:
         """
         Gera o hash da transação. 
@@ -70,13 +110,13 @@ class Transaction:
                 "output_index": inp.output_index,
                 # Não incluímos signature/pubkey no ID da transação
             })
-        
+
         tx_content = {
             "inputs": clean_inputs,
             "outputs": [o.to_dict() for o in self.outputs],
             "timestamp": self.timestamp
         }
-        
+
         # sort_keys=True é OBRIGATÓRIO para garantir determinismo
         tx_string = json.dumps(tx_content, sort_keys=True).encode()
         return hashlib.sha256(tx_string).hexdigest()
@@ -110,10 +150,10 @@ class Transaction:
             encoding=crypto_serialization.Encoding.PEM,
             format=crypto_serialization.PublicFormat.SubjectPublicKeyInfo
         )
-        
+
         self.inputs[input_index].signature = signature.hex()
         # Armazenamos a pubkey limpa para facilitar verificação
-        self.inputs[input_index].public_key = pub_bytes.hex() 
+        self.inputs[input_index].public_key = pub_bytes.hex()
 
     def is_valid(self) -> bool:
         """
@@ -131,7 +171,7 @@ class Transaction:
 
         for inp in self.inputs:
             # Transações Coinbase (recompensa) não têm assinatura normal
-            if inp.prev_tx_id == "00000000": 
+            if inp.prev_tx_id == "00000000":
                 continue
 
             if not inp.signature or not inp.public_key:
@@ -141,7 +181,7 @@ class Transaction:
                 # Reconstrói a chave pública
                 public_key_bytes = bytes.fromhex(inp.public_key)
                 public_key = crypto_serialization.load_pem_public_key(public_key_bytes)
-                
+
                 # Verifica a assinatura
                 signature_bytes = bytes.fromhex(inp.signature)
                 public_key.verify(
@@ -165,11 +205,11 @@ class Transaction:
         # Input dummy. No Bitcoin, colocamos o "Block Height" aqui para garantir unicidade
         coinbase_input = TxInput(
             prev_tx_id="00000000",
-            output_index=block_height, # Garante que o hash mude a cada bloco
+            output_index=block_height,  # Garante que o hash mude a cada bloco
             signature="coinbase",
             public_key=""
         )
-        
+
         tx_output = TxOutput(amount=reward, address=receiver_address)
-        
+
         return cls(inputs=[coinbase_input], outputs=[tx_output])

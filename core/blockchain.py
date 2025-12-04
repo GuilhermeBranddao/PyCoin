@@ -1,18 +1,8 @@
 import time
-from typing import Optional, Tuple
 
+from config import DIFFICULTY_ADJUSTMENT_INTERVAL, GENESIS_BITS, TARGET_BLOCK_TIME
 from core.block import Block, BlockHeader
 
-# --- CONSTANTES DE CONSENSO (Hardcoded Rules) ---
-# Todos os nós da rede DEVEM concordar com estes valores.
-
-TARGET_BLOCK_TIME = 180            # 3 minutos em segundos
-DIFFICULTY_ADJUSTMENT_INTERVAL = 10 # A cada 10 blocos recalculamos a dificuldade
-                                   # (No Bitcoin é 2016 blocos)
-
-# Dificuldade Inicial (Bits Compactos)
-# 0x1d00ffff é um valor alto padrão para testes (fácil de minerar)
-GENESIS_BITS = 0x1d00ffff 
 
 class DifficultyEngine:
     """
@@ -21,41 +11,38 @@ class DifficultyEngine:
     """
 
     @staticmethod
-    def calculate_next_work_required(last_block: Block, 
+    def calculate_next_work_required(last_block: Block,
                                      epoch_start_block: Block) -> int:
         """
         Calcula os 'bits' para o próximo bloco.
         Só muda se fecharmos o intervalo (height % INTERVAL == 0).
         """
-        
+
         # 1. Se não for hora de ajustar, mantém a dificuldade anterior
         if (last_block.height + 1) % DIFFICULTY_ADJUSTMENT_INTERVAL != 0:
             return last_block.header.bits
 
         # 2. Calcula quanto tempo levou para minerar os últimos X blocos
         actual_timespan = last_block.header.timestamp - epoch_start_block.header.timestamp
-        
+
         target_timespan = TARGET_BLOCK_TIME * DIFFICULTY_ADJUSTMENT_INTERVAL
 
         # 3. Limites de segurança (Retargeting Limiting)
         # Impede que a dificuldade mude mais que 4x para cima ou para baixo de uma vez.
         # Isso evita ataques de manipulação temporal.
-        if actual_timespan < target_timespan / 4:
-            actual_timespan = target_timespan / 4
-        if actual_timespan > target_timespan * 4:
-            actual_timespan = target_timespan * 4
+        actual_timespan = max(actual_timespan, target_timespan / 4)
+        actual_timespan = min(actual_timespan, target_timespan * 4)
 
         # 4. Calcula o novo target
         last_target = DifficultyEngine.bits_to_target(last_block.header.bits)
-        
+
         # A matemática básica: Novo Target = Velho Target * (Tempo Real / Tempo Ideal)
         # Se demorou muito (Tempo Real > Ideal), o Target aumenta (fica mais fácil achar hash menor).
         new_target = int(last_target * actual_timespan / target_timespan)
 
         # Não deixa ficar mais fácil que o Genesis (limite mínimo de dificuldade)
         max_target = DifficultyEngine.bits_to_target(GENESIS_BITS)
-        if new_target > max_target:
-            new_target = max_target
+        new_target = min(new_target, max_target)
 
         return DifficultyEngine.target_to_bits(new_target)
 
@@ -81,8 +68,9 @@ class DifficultyEngine:
         if coefficient > 0xffffff:
             coefficient >>= 8
             exponent += 1
-        
+
         return (exponent << 24) | coefficient
+
 
 class BlockchainRules:
     """
@@ -98,7 +86,7 @@ class BlockchainRules:
         """
         target = DifficultyEngine.bits_to_target(header.bits)
         block_hash_int = int(header.calculate_hash(), 16)
-        
+
         return block_hash_int <= target
 
     @staticmethod

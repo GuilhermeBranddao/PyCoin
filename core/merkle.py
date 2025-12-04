@@ -2,6 +2,7 @@
 import hashlib
 from typing import List
 
+
 class MerkleTree:
     @staticmethod
     def get_merkle_root(transaction_hashes: List[str]) -> str:
@@ -19,7 +20,7 @@ class MerkleTree:
 
         while len(current_level) > 1:
             next_level = []
-            
+
             # Se houver número ímpar de elementos, duplica o último
             if len(current_level) % 2 != 0:
                 current_level.append(current_level[-1])
@@ -28,7 +29,7 @@ class MerkleTree:
             for i in range(0, len(current_level), 2):
                 left = current_level[i]
                 right = current_level[i + 1]
-                
+
                 # Concatena e faz o hash
                 # Nota: Em produção real, tratamos como bytes, aqui simplificamos com strings hex
                 combined = left + right

@@ -76,7 +76,7 @@ pycoin/
 
 ## Constituição
 
-### Core (Regras)
+### Regras de Consenso (Core)
 - O core/ contém as Regras de Consenso. Ele não deve saber o que é HTTP, não deve saber o que é FastAPI, nem o que é um banco de dados SQL ou JSON.
 - A Regra de Ouro: Você deve ser capaz de importar o core tanto no node/ quanto no miner_client/ sem arrastar dependências de rede.
 - O que vive aqui: A matemática pura. calculate_hash, verify_signature, calculate_merkle_root. Se o Bitcoin mudasse de TCP para pombo-correio, o core não mudaria uma linha de código.
@@ -150,7 +150,7 @@ Stateless: A classe BlockchainRules não guarda estado. Você passa (block, prev
 - A Armadilha do UTXO:Muitos iniciantes tentam calcular o saldo iterando a blockchain inteira toda vez. Isso é $O(N)$.A Solução Sênior: Você precisa manter um UTXO Set (o "Chainstate").No seu node/storage/, além do chain.json (que é o histórico), você precisará de um índice separado. Sugiro fortemente usar SQLite ou LevelDB (o Bitcoin usa LevelDB) para o UTXO Set, mesmo que didático Estrutura de Dados sugerida para o UTXO:A chave primária de uma moeda não é o "dono", é a transação que a criou.
 
 
-### O Node como Gateway (`node/`)
+## Rede (Node)
 - Routes: Apenas recebem o JSON, validam o formato (Pydantic) e passam para o service.
 - Services: Orquestram. Exemplo no blocks.py:
     - Recebe bloco.
@@ -158,6 +158,13 @@ Stateless: A classe BlockchainRules não guarda estado. Você passa (block, prev
     - Chama core.pow.verify_pow() (Validação matemática).
     - Se válido, chama storage para salvar.
     - Chama p2p_service para propagar.
+
+### node/routes/mining.py
+
+#### ⚖️ Ajustando Dificuldade!
+Blocos 0 a 9: Minerados com dificuldade média (0x1e...). Deve levar alguns segundos por bloco.
+Bloco 10: O Node vai printar ⚖️ Ajustando Dificuldade!.
+Se você minerou os 10 blocos muito rápido (ex: 1 minuto total ao invés de 30 min), o sistema vai aumentar drasticamente a dificuldade para o bloco 11.
 
 
 ### config.py
@@ -169,7 +176,7 @@ Stateless: A classe BlockchainRules não guarda estado. Você passa (block, prev
 Quando uma transação chega (/tx/new), o Node deve validar a assinatura imediatamente usando core/crypto.py antes de aceitar na mempool. Isso evita spam.
 
 
-## Engenharia de sistemas (Coração da Persistência)
+## Persistência (Storage)
 Para um blockchain funcionar, você precisa de duas estruturas de dados rodando em paralelo:
 1. Blockchain (Histórico): A pilha de blocos (imutável).
 2. UTXO Set (Estado Atual): O "banco de dados" de quem tem dinheiro agora.
@@ -206,27 +213,78 @@ Aqui vamos implementar o padrão profissional híbrido:
 Instalação Necessária: Você precisará da lib plyvel (wrapper Python para LevelDB). pip install plyvel (no linux) ou usar o poetry add python-rocksdb (para o windows)
 
 
+## Mineração (PoW) 
+
+### `miner_client/miner.py`
+
+Você chegou no momento mais emocionante: ver a sua máquina "suando" para encontrar um bloco.
+O Miner Client precisa ser extremamente eficiente. Enquanto o Node é um gerente (IO-bound), o Miner é um operário braçal (CPU-bound).
+
+Vou criar o arquivo `miner_client/miner.py`. Ele é um script independente que:
+- Pede trabalho ao Node (`GET /mining/get_work`).
+    1. O **Minerador** envia o endereço dele no pedido de trabalho.
+    2. O **Node** calcula as taxas (Fees) de todas as transações da mempool.
+    3. O **Node** cria uma transação Coinbase: `Output = (Recompensa Fixa + Taxas)` enviada para o endereço do minerador.
+- Prepara o Block Header binário (exatamente como o Core espera).
+- Executa o Double SHA-256 em loop (Força Bruta).
+- Se achar o hash < target, envia ao Node (`POST /mining/submit_work`).
+
+
+## Cliente (Wallet)
+
+Wallet não tem o banco de dados. Ela é um cliente "cego".
+- Ela precisa perguntar ao Node: "Quais moedas (UTXOs) eu tenho?"
+- Ela constrói a transação localmente.
+- Ela assina com a chave privada (que nunca sai da Wallet).
+- Ela envia apenas a transação assinada para a rede.
+
+
+`node/storage/chain_repository.py`
+- Itera sobre todos os UTXOs ativos e filtra pelo endereço.
+- Retorna lista de {tx_id, output_index, amount}.
+
+`node/routes/tx.py` --> `@router.get("/utxo/{address}")`
+- Expoem uma rota para a Wallet consultar saldo.
+
+O Cliente Wallet `wallet_client/simple_wallet.py`
+- Ele vai gerar suas chaves, consultar o saldo no Node e criar transações complexas com Troco (Change).
 
 
 
+## Proximos Passos
+
+Atualmente temoa uma "Centralized Ledger" rodando na sua maquina, para isso se tornar uma blockchain de verdade, ela precisa ser distribuida.
+Ou seja você tem um servidor isolado em uma Rede Mesh.
+
+### Caminho A: A Rede P2P (Decentralização) 🕸️
+Atualmente, se você subir um segundo Node na porta 8001, ele não sabe que o Node 8000 existe. Eles viverão em universos paralelos. O Desafio: Fazer os nós conversarem (Gossip Protocol).
+1. Handshake: Node A conecta em Node B.
+2. Sync: "Ei, qual a altura da sua chain? A minha é 50." -> "A minha é 55, tome aqui os 5 blocos que te faltam."
+3. Broadcast: Quando a Wallet envia uma TX para o Node A, ele deve repassar para o Node B instantaneamente.
+4. Consenso (Longest Chain Rule): Se houver um fork (dois mineradores acham blocos ao mesmo tempo), os nós precisam decidir matematicamente qual caminho seguir.
+
+**Passos:**
+1. Transformar o servidor solitario em um cluster
+**Desafios**
+- **Discovery (Descoberta)**: 
+    - Como o Node 2 sabe que o Node 1 existe? (Vamos usar um Handshake manual).
+- **Broadcast (Fofoca)**: 
+    - Quando o Node 1 minera um bloco, ele deve avisar o Node 2 e o Node 3 imediatamente.
+- **Synchronization (Sincronização)**: Se o Node 3 entrar na rede atrasado (bloco 0), ele deve saber pedir os 50 blocos que faltam para o Node 1.
 
 
+### Caminho B: Block Explorer (Frontend) 🔍
+O Desafio: Criar uma UI que consome sua API.
+1. Visualizar os blocos em tempo real.
+2. Pesquisar transações por Hash.
+3. Ver o "Mempool" enchendo antes do bloco ser minerado.
+4. Gráfico de Hashrate da rede.
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+### Caminho C: Smart Contracts (VM) ⚙️
+O Bitcoin é limitado a pagamentos. O Ethereum introduziu uma VM. O Desafio: Criar uma mini linguagem de script.
+1. Em vez de apenas pubkey, o output tem um pequeno código Python/Assembly.
+2. Implementar OP_RETURN para gravar mensagens na blockchain.
 
 
 
