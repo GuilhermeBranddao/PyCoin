@@ -20,11 +20,14 @@ Escolha o método de instalação conforme o sistema operacional:
 #### Para Linux:
 
 Dê permissão de execução: 
-`chmod +x install/install_v1.1.sh`
+`chmod +x install/install.sh`
 
 Execute o script de instalação:
 
-`. install/install_v1.1.sh`
+`. install/install.sh`
+
+Ative o ambiente virtual 
+`. install/install.sh`
 
 #### Para Windows:
 1. Baixe e instale o [Python 3.12](https://www.python.org/downloads/release/python-3120/).
@@ -43,8 +46,16 @@ Execute o script de instalação:
 
 Se tudo deu certo, rode a aplicação com o seguinte comando:
 
-`task run`
+<!-- `task run` -->
 
+Rode o Node mestre (Node 8000)
+`python node/app.py 8000`
+
+Rode o Seguidor (Node 8001)
+`python node/app.py 8001`
+
+Rode o Observador (Node 8002)
+`python node/app.py 8002`
 
 Criar (Gênesis)
 `python scripts/init_blockchain.py`

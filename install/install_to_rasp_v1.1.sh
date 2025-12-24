@@ -59,7 +59,7 @@ else
 fi
 
 # Lista de libs necessárias para compilar o Python completo (SSL, SQlite, etc)
-BUILD_DEPS="build-essential zlib1g-dev libncurses5-dev libgdbm-dev libnss3-dev libssl-dev libsqlite3-dev libreadline-dev libffi-dev curl libbz2-dev"
+BUILD_DEPS="build-essential python3-dev libleveldb-dev zlib1g-dev libncurses5-dev libgdbm-dev libnss3-dev libssl-dev libsqlite3-dev libreadline-dev libffi-dev curl libbz2-dev"
 
 echo "Instalando compiladores e bibliotecas..."
 if retry_command sudo apt install -y $BUILD_DEPS; then
@@ -159,17 +159,13 @@ export PATH=$PATH:$HOME/.local/bin
 poetry config virtualenvs.in-project true
 
 echo "Instalando dependências (poetry install)..."
-if retry_command poetry install; then
+
+# pip install keyrings.alt
+poetry config keyring.enabled false
+if retry_command poetry install -vvv; then
     INSTALLED_SUCCESS+=("Project Deps (Poetry)")
 else
     INSTALLED_FAIL+=("Project Deps (Poetry)")
-fi
-
-# Tentar instalar requirements.txt como fallback ou complemento se existir
-if [ -f "requirements.txt" ]; then
-    echo "Encontrado requirements.txt. Instalando via pip no ambiente virtual..."
-    # Usa o pip do poetry run para garantir que vai para o venv
-    poetry run pip install -r requirements.txt
 fi
 
 # ==========================================

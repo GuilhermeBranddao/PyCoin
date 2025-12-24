@@ -21,8 +21,8 @@ sudo make altinstall
 python3.12 --version
 
 # Criar e ativar o ambiente virtual
-python3.12 -m venv venv
-source venv/bin/activate
+python3.12 -m .venv venv
+source .venv/bin/activate
 
 # Atualizar pip e instalar dependências
 pip install --upgrade pip
